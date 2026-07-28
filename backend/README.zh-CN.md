@@ -32,14 +32,14 @@ LEXPRO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 ## Flyway 安全说明
 
-现有 V3 开发数据库尚未经过批准的基线登记，因此 Flyway 默认关闭：
+现有开发数据库已于 2026-07-28 登记为 Flyway 版本 3 基线。Flyway 仍默认关闭，保证每次迁移都经过明确决定：
 
 ```text
 LEXPRO_FLYWAY_ENABLED=false
 LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
 ```
 
-在现有数据库完成备份并通过32张业务表验证前，不能开启baseline开关。`lexpro.flyway_schema_history` 成功登记版本3后，必须立即删除一次性baseline开关。后续结构修改从V4开始。
+保持 `LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false`。只有经过批准的验证或迁移才开启 Flyway，后续结构修改从 V4 开始。当前数据库包含 32 张业务表和基础设施表 `lexpro.flyway_schema_history`。
 
 ## 在中文版 IntelliJ IDEA 中运行
 

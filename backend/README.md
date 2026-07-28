@@ -34,14 +34,14 @@ Do not put a real password in `application.properties` or commit it to Git.
 
 ## Flyway safety
 
-Flyway is disabled by default while the existing V3 development database awaits an approved baseline:
+The existing development database was registered as Flyway baseline version 3 on 2026-07-28. Flyway remains disabled by default so a migration still requires an explicit decision:
 
 ```text
 LEXPRO_FLYWAY_ENABLED=false
 LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
 ```
 
-Do not enable the baseline flag against the existing database until it has been backed up and the 32-business-table validation has passed. The one-time baseline must be removed immediately after `lexpro.flyway_schema_history` records version 3. New schema work starts at V4.
+Keep `LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false`. Enable Flyway only for an approved validation or migration; new schema work starts at V4. The current database contains 32 business tables and the `lexpro.flyway_schema_history` infrastructure table.
 
 ## Run in IntelliJ IDEA
 

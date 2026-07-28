@@ -19,7 +19,21 @@ DBM/lexpro_schema_upgrade_v2_core.sql         # V2，增加 5 张表
 DBM/lexpro_schema_upgrade_v3_workspace.sql    # V3，增加 6 张表
 ```
 
-当前开发数据库已经升级完成，不能再次执行这些脚本。
+当前开发数据库已经升级完成，并登记为 Flyway 版本 3 基线，不能再次执行这些脚本。
+
+## 基线执行记录
+
+已于 2026-07-28 完成：
+
+- 在可丢弃数据库中通过 Flyway 执行 V1/V2/V3，得到 32 张业务表和 `flyway_schema_history`。
+- 三个 SQL 迁移均成功，pgvector 版本为 0.8.5，不存在未验证约束。
+- 验证完成后已删除可丢弃数据库。
+- 现有 `lexpro` 数据库已备份到 `backups/lexpro_before_flyway_baseline_20260728.dump`。
+- 备份 SHA-256：`CBA7F856ED8756E4EE7B4249D2B430E70D81FE61263121EE02680130DE9AE20E`。
+- 现有 Schema 只登记了一条成功的版本 3 `BASELINE` 记录，没有重放 V1/V2/V3。
+- 关闭 `baseline-on-migrate` 后再次启动 Flyway，验证数据库仍为最新版本 3。
+
+Flyway 11.7.2 会提示 PostgreSQL 18.4 超出其已测试支持范围（最高 PostgreSQL 17）。本地完整迁移和验证已经通过，但生产部署前应重新检查 Spring Boot 管理的 Flyway 版本。
 
 ## 验证方法
 
@@ -35,17 +49,16 @@ WHERE table_schema = 'lexpro'
 
 预期业务表数为 `32`。Flyway 基线登记前，这也是物理表总数；登记后 Schema 中会有 33 张物理表，其中 `flyway_schema_history` 是 Flyway 基础设施元数据，不计入业务验证和 ER 图。其他只读检查位于 `DBM/lexpro_schema_validation.sql` 和 `DBM/SCHEMA_UPGRADE_README.md`。
 
-## 后续 Flyway 策略
+## Flyway 策略
 
 1. `DBM` 中已经审查的 V1/V2/V3 原文件保持不变，作为历史来源。
 2. 后端资源中的迁移副本只删除最外层 `BEGIN/COMMIT`，因为每个迁移的事务由 Flyway 管理；每个副本记录来源文件的 SHA-256。
 3. Flyway和baseline-on-migrate默认关闭，并通过环境变量控制。
-4. 接触现有数据库前，先在可丢弃数据库执行 V1/V2/V3 并验证最终32表结构。
-5. 只有完成备份、只读验证和明确批准后，才能把现有非空开发数据库登记为版本3基线。
-6. 创建基线记录后立即移除一次性的baseline开关。
-7. 新结构修改从 `V4__<description>.sql` 开始。
-8. 每个迁移只向前执行；在PostgreSQL允许时使用事务，并提供验证SQL。
-9. 应用启动不能被视为自动批准修改未备份的生产数据库。
+4. 可丢弃数据库验证和现有数据库 V3 基线已于 2026-07-28 完成。
+5. 一次性基线记录创建后，必须保持 `baseline-on-migrate=false`。
+6. 新结构修改从 `V4__<description>.sql` 开始。
+7. 每个迁移只向前执行；在PostgreSQL允许时使用事务，并提供验证SQL。
+8. 应用启动不能被视为自动批准修改未备份的生产数据库。
 
 当前安全控制：
 

@@ -21,12 +21,12 @@
 - [x] M0-S2 Add root ignore rules and project `AGENTS.md`.
 - [x] M0-S3 Add implementation, API, business, database and decision documents.
 - [x] M0-S4 Document backend startup and required environment variables.
-- [ ] M0-S5 Introduce Flyway without rerunning the existing V1/V2/V3 database.
+- [x] M0-S5 Introduce Flyway without rerunning the existing V1/V2/V3 database.
   - [x] Add Flyway dependencies and safe-by-default configuration.
   - [x] Package traceable V1/V2/V3 resources without manual transaction wrappers.
   - [x] Add migration resource integrity tests.
-  - [ ] Execute V1/V2/V3 on a disposable database and verify 32 business tables.
-  - [ ] Back up, validate and explicitly baseline the existing development database at V3.
+  - [x] Execute V1/V2/V3 on a disposable database and verify 32 business tables.
+  - [x] Back up, validate and explicitly baseline the existing development database at V3.
 
 ## M1 - Backend conventions
 

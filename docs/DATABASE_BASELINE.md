@@ -19,7 +19,21 @@ DBM/lexpro_schema_upgrade_v2_core.sql         # V2, +5 tables
 DBM/lexpro_schema_upgrade_v3_workspace.sql    # V3, +6 tables
 ```
 
-The existing development database has already been upgraded. Do not rerun these scripts against it.
+The existing development database has already been upgraded and registered as Flyway baseline version 3. Do not rerun these scripts against it.
+
+## Baseline execution record
+
+Completed on 2026-07-28:
+
+- A disposable database applied V1/V2/V3 through Flyway and reached 32 business tables plus `flyway_schema_history`.
+- All three SQL migrations succeeded, pgvector 0.8.5 was available, and no constraints remained unvalidated.
+- The disposable database was deleted after validation.
+- The existing `lexpro` database was backed up to `backups/lexpro_before_flyway_baseline_20260728.dump`.
+- Backup SHA-256: `CBA7F856ED8756E4EE7B4249D2B430E70D81FE61263121EE02680130DE9AE20E`.
+- The existing schema was registered with one successful `BASELINE` history row at version 3; V1/V2/V3 were not replayed.
+- A second Flyway startup with `baseline-on-migrate=false` validated the schema as current at version 3.
+
+Flyway 11.7.2 reports that PostgreSQL 18.4 is newer than its tested support range (up to PostgreSQL 17). The complete migration and validation passed locally, but the managed Flyway version should be reviewed before production deployment.
 
 ## Validation
 
@@ -35,17 +49,16 @@ WHERE table_schema = 'lexpro'
 
 Expected business table count: `32`. Before Flyway baseline registration this is also the physical table count. Afterwards the schema has 33 physical tables because `flyway_schema_history` is Flyway infrastructure metadata. It is excluded from business validation and the ER diagram. Additional read-only checks are in `DBM/lexpro_schema_validation.sql` and `DBM/SCHEMA_UPGRADE_README.md`.
 
-## Future Flyway strategy
+## Flyway strategy
 
 1. Preserve the reviewed `DBM` V1/V2/V3 files exactly as the historical source.
 2. Package derived classpath migrations with only the outer `BEGIN/COMMIT` removed, because Flyway owns each migration transaction. Each derived file records its source SHA-256.
 3. Flyway and baseline-on-migrate are disabled by default through environment-controlled configuration.
-4. Execute V1/V2/V3 on a disposable database and verify the final 32-table schema before touching the existing database.
-5. Configure the existing non-empty development database as baseline version 3 only after backup, read-only validation and explicit approval.
-6. Remove the one-time baseline flag immediately after the baseline record is created.
-7. New changes start at `V4__<description>.sql`.
-8. Every migration is forward-only, transactional where PostgreSQL permits, and accompanied by validation SQL.
-9. Never use application startup as implicit approval to alter an unbacked-up production database.
+4. The disposable-database verification and existing-database V3 baseline were completed on 2026-07-28.
+5. Keep `baseline-on-migrate` false after the one-time baseline record has been created.
+6. New changes start at `V4__<description>.sql`.
+7. Every migration is forward-only, transactional where PostgreSQL permits, and accompanied by validation SQL.
+8. Never use application startup as implicit approval to alter an unbacked-up production database.
 
 Current controls:
 
