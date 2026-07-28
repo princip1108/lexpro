@@ -12,6 +12,10 @@ This document contains rules already supported by the final database and prior p
 - Roles map to permissions through `auth_role_permission`.
 - Disabled users cannot authenticate.
 - Passwords are stored as BCrypt hashes and are never returned by APIs.
+- New/reset passwords contain at least 12 characters, include uppercase, lowercase, number and special characters, and do not exceed BCrypt's 72-byte input limit.
+- Administrators cannot disable their own current account.
+- Username and organization-code uniqueness is case-insensitive.
+- Account status, password or profile changes invalidate access tokens issued before the change.
 
 ## Cases
 

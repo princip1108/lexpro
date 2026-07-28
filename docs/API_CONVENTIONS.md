@@ -78,6 +78,26 @@ Errors use Spring `ProblemDetail` (`application/problem+json`) with stable exten
 - Protected APIs use `Authorization: Bearer <access-token>`.
 - Public endpoints are limited to health checks, local API documentation and login.
 - The backend is authoritative for permissions and case visibility.
+- Access tokens use HS256, expire after 30 minutes by default and are not refreshable.
+- `POST /api/v1/auth/logout` records the action; the client must discard the token. There is no server-side token blacklist.
+- Protected requests reload the account status and role permissions. Disabled/deleted/changed accounts cannot continue using an older token.
+- Login, current-user and token responses use `Cache-Control: no-store`.
+
+### M2 endpoints
+
+| Method | Path | Access | Result |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/login` | Public | Access token, expiry and current user |
+| `GET` | `/api/v1/auth/me` | Authenticated | Current user, organization, role and permissions |
+| `POST` | `/api/v1/auth/logout` | Authenticated | `204 No Content` |
+| `GET` | `/api/v1/users` | `USER_MANAGE` | Paged users |
+| `GET` | `/api/v1/users/{userId}` | `USER_MANAGE` | User detail |
+| `POST` | `/api/v1/users` | `USER_MANAGE` | `201 Created` user |
+| `PATCH` | `/api/v1/users/{userId}/status` | `USER_MANAGE` | Enabled/disabled user |
+| `PUT` | `/api/v1/users/{userId}/password` | `USER_MANAGE` | `204 No Content` |
+| `GET` | `/api/v1/organizations/tree` | `USER_MANAGE` | Organization tree |
+| `GET` | `/api/v1/roles` | `USER_MANAGE` | Roles with permission codes |
+| `GET` | `/api/v1/permissions` | `USER_MANAGE` | Permission catalog |
 
 ## Endpoint naming
 

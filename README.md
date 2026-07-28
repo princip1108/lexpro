@@ -20,10 +20,10 @@ lexpro/
 
 ## Current status
 
-- Frontend prototype: implemented with mock JSON data.
+- Frontend: real authentication and route protection are connected; later business screens still use mock JSON where noted.
 - Database: V1 + V2 + V3 complete, with 32 business tables in the `lexpro` schema.
-- Backend: includes health checks, a paged read-only user list, standard errors, validation, OpenAPI, development CORS, request correlation, and an audit helper.
-- Authentication, case workflows, dossier storage, AI processing, reports, and recommendation APIs are not implemented yet.
+- Backend: M0-M2 are complete, including JWT authentication, user administration, organization/RBAC queries, standard errors, OpenAPI, request correlation and audit logging.
+- Case workflows, dossier storage, AI processing, reports, and recommendation APIs are not implemented yet.
 
 ## Documentation
 
@@ -34,3 +34,4 @@ lexpro/
 - [Database baseline](docs/DATABASE_BASELINE.md)
 - [Technical decisions](docs/DECISIONS.md)
 - [Backend setup](backend/README.md)
+- [M2 security review](docs/M2_SECURITY_REVIEW.md)

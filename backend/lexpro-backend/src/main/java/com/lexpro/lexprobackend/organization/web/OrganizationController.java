@@ -3,6 +3,7 @@ package com.lexpro.lexprobackend.organization.web;
 import com.lexpro.lexprobackend.organization.service.OrganizationService;
 import com.lexpro.lexprobackend.organization.web.dto.OrganizationTreeNodeResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/organizations")
 @PreAuthorize("hasAuthority('USER_MANAGE')")
+@SecurityRequirement(name = "bearerAuth")
 public class OrganizationController {
 
     private final OrganizationService organizationService;

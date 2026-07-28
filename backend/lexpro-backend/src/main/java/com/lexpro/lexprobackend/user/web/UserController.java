@@ -10,6 +10,7 @@ import com.lexpro.lexprobackend.user.web.dto.ResetUserPasswordRequest;
 import com.lexpro.lexprobackend.user.web.dto.UpdateUserStatusRequest;
 import com.lexpro.lexprobackend.user.web.dto.UserSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springdoc.core.annotations.ParameterObject;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/v1/users")
 @PreAuthorize("hasAuthority('USER_MANAGE')")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
 
     private final AppUserService appUserService;

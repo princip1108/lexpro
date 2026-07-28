@@ -13,5 +13,9 @@ class OpenApiConfigTests {
 
         assertEquals("LexPro API", openAPI.getInfo().getTitle());
         assertEquals("v1", openAPI.getInfo().getVersion());
+        assertEquals(
+                "bearer",
+                openAPI.getComponents().getSecuritySchemes().get("bearerAuth").getScheme()
+        );
     }
 }

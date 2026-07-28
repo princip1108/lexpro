@@ -5,6 +5,7 @@ import com.lexpro.lexprobackend.auth.web.dto.CurrentUserResponse;
 import com.lexpro.lexprobackend.auth.web.dto.LoginRequest;
 import com.lexpro.lexprobackend.auth.web.dto.LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "Get the current authenticated user")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<CurrentUserResponse> me(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -44,6 +46,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "Record logout; the client must discard its access token")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal Jwt jwt) {
         authService.logout(Long.parseLong(jwt.getSubject()), jwt.getId());
         return ResponseEntity.noContent()

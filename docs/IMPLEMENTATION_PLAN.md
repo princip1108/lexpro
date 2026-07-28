@@ -2,7 +2,7 @@
 
 [中文版](zh-CN/IMPLEMENTATION_PLAN.md)
 
-> Updated: 2026-07-28  
+> Updated: 2026-07-29
 > Delivery method: small AI-assisted vertical slices, each independently tested and accepted.
 
 ## Current baseline
@@ -14,6 +14,9 @@
 - [x] MyBatis-Plus integration.
 - [x] Read-only user list with password excluded.
 - [x] Backend controller tests and application context test.
+- [x] JWT authentication, live account/permission checks and BCrypt credentials.
+- [x] Administrator user management and organization/RBAC queries.
+- [x] Frontend login, session expiry handling and route protection.
 
 ## M0 - Repository and project governance
 
@@ -40,16 +43,16 @@
 
 ## M2 - Authentication, users and organizations
 
-- [ ] M2-S1 User detail DTO and lookup service.
-- [ ] M2-S2 Safe development administrator bootstrap.
-- [ ] M2-S3 BCrypt password handling and credential lookup.
-- [ ] M2-S4 Login API and JWT issuance.
-- [ ] M2-S5 Spring Security JWT authentication and authorization failures.
-- [ ] M2-S6 Current-user and logout APIs.
-- [ ] M2-S7 User create, disable and password-reset administration.
-- [ ] M2-S8 Organization tree, role and permission queries.
-- [ ] M2-S9 Replace frontend login mock and add route protection.
-- [ ] M2-S10 Authentication/security review.
+- [x] M2-S1 User detail DTO and lookup service.
+- [x] M2-S2 Safe development administrator bootstrap.
+- [x] M2-S3 BCrypt password handling and credential lookup.
+- [x] M2-S4 Login API and JWT issuance.
+- [x] M2-S5 Spring Security JWT authentication and authorization failures.
+- [x] M2-S6 Current-user and logout APIs.
+- [x] M2-S7 User create, disable and password-reset administration.
+- [x] M2-S8 Organization tree, role and permission queries.
+- [x] M2-S9 Replace frontend login mock and add route protection.
+- [x] M2-S10 Authentication/security review.
 
 ## M3 - Case workflow
 

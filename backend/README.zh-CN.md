@@ -18,6 +18,7 @@ Maven 工程位于 `backend/lexpro-backend`。
 
 ```text
 LEXPRO_DB_PASSWORD=<你的 PostgreSQL 密码>
+LEXPRO_JWT_SECRET=<至少 32 字节的唯一随机值>
 ```
 
 可选覆盖项：
@@ -26,9 +27,26 @@ LEXPRO_DB_PASSWORD=<你的 PostgreSQL 密码>
 LEXPRO_DB_URL=jdbc:postgresql://127.0.0.1:5432/lexpro?currentSchema=lexpro
 LEXPRO_DB_USERNAME=postgres
 LEXPRO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+LEXPRO_JWT_ISSUER=https://lexpro.local
+LEXPRO_JWT_ACCESS_TOKEN_TTL=PT30M
 ```
 
-不能把真实密码写入 `application.properties` 或提交到 Git。
+不能把真实数据库密码、JWT 密钥或管理员密码写入 `application.properties`，也不能提交到 Git。修改 JWT 密钥会让所有已签发的 Access Token 失效。
+
+## 首个开发管理员
+
+管理员初始化默认关闭，并且只在 `app_user` 为空时创建账号。第一次本地运行时，可以暂时在 IntelliJ 运行配置中增加：
+
+```text
+LEXPRO_BOOTSTRAP_ADMIN_ENABLED=true
+LEXPRO_BOOTSTRAP_ADMIN_USERNAME=admin
+LEXPRO_BOOTSTRAP_ADMIN_PASSWORD=<本地强密码>
+LEXPRO_BOOTSTRAP_ADMIN_REAL_NAME=System Administrator
+LEXPRO_BOOTSTRAP_ORGANIZATION_CODE=LEXPRO
+LEXPRO_BOOTSTRAP_ORGANIZATION_NAME=LexPro
+```
+
+密码至少 12 个字符，并且包含大小写字母、数字和特殊字符。启动一次并确认账号创建成功后，把 `LEXPRO_BOOTSTRAP_ADMIN_ENABLED` 改回 `false`。已有用户数据不会被覆盖。
 
 ## Flyway 安全说明
 
@@ -47,7 +65,7 @@ LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
 2. 项目 SDK 选择 Java 21。
 3. 打开 **运行 -> 编辑配置**。
 4. 选择 `LexproBackendApplication`。
-5. 在 **环境变量** 中添加 `LEXPRO_DB_PASSWORD`。
+5. 在 **环境变量** 中添加 `LEXPRO_DB_PASSWORD` 和 `LEXPRO_JWT_SECRET`。
 6. 运行 `com.lexpro.lexprobackend.LexproBackendApplication`。
 
 ## 命令行运行
@@ -64,10 +82,22 @@ LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
 ```http
 GET /api/health
 GET /api/health/database
+POST /api/v1/auth/login
+GET /api/v1/auth/me
+POST /api/v1/auth/logout
 GET /api/v1/users?page=1&size=20
+GET /api/v1/users/{userId}
+POST /api/v1/users
+PATCH /api/v1/users/{userId}/status
+PUT /api/v1/users/{userId}/password
+GET /api/v1/organizations/tree
+GET /api/v1/roles
+GET /api/v1/permissions
 ```
 
-用户列表目前暂未鉴权，完成认证里程碑后会增加权限保护。
+只有健康检查、Swagger/OpenAPI 和登录接口公开。用户、组织、角色和权限接口都要求 `USER_MANAGE` 权限。
+
+Access Token 默认 30 分钟过期，不提供 Refresh Token。退出接口会写审计，前端会丢弃 Token；服务端不维护 Token 黑名单。
 
 本地接口文档：
 

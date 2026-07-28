@@ -11,7 +11,7 @@
 | ADR-005 | Accepted | Return response DTOs, never persistence entities. | Prevents schema leakage and sensitive-field exposure. |
 | ADR-006 | Accepted | Use resource JSON for success and `ProblemDetail` for errors. | Preserves HTTP semantics and gives the frontend stable error codes. |
 | ADR-007 | Accepted | No public registration; accounts are administered internally. | Fits the internal legal-system use case. |
-| ADR-008 | Proposed | Use Spring Security, BCrypt and JWT access tokens. | Supports stateless frontend authentication; exact lifetime is not yet fixed. |
+| ADR-008 | Accepted | Use Spring Security, BCrypt and 30-minute HS256 JWT access tokens without refresh tokens. Logout discards the client token; account changes invalidate older tokens. | Provides a small stateless baseline without Redis or token tables; live account and permission checks limit stale authorization. |
 | ADR-009 | Accepted | Store file binaries outside PostgreSQL behind a storage interface. | Supports local development and later MinIO without changing domain services. |
 | ADR-010 | Accepted | Add a Python service only for document/AI processing. | Keeps Java authoritative for business data while using the appropriate AI ecosystem. |
 | ADR-011 | Accepted | Defer vector dimension/index selection. | Dimension and operator must match the selected embedding model. |
@@ -20,7 +20,6 @@
 
 ## Pending decisions
 
-- JWT access-token lifetime and whether refresh tokens are needed.
 - Local storage root and production MinIO layout.
 - Sensitive identity-field encryption/masking mechanism.
 - Case status-transition matrix.

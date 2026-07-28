@@ -79,6 +79,26 @@
 - 受保护接口使用 `Authorization: Bearer <access-token>`。
 - 公开接口仅限健康检查、本地接口文档和登录。
 - 权限和案件可见范围以后端判断为准，前端隐藏按钮不能代替权限控制。
+- Access Token 使用 HS256，默认 30 分钟过期，不提供 Refresh Token。
+- `POST /api/v1/auth/logout` 记录退出操作，客户端必须丢弃 Token；服务端没有 Token 黑名单。
+- 受保护请求会重新读取账号状态和角色权限。账号被禁用、删除或修改后，旧 Token 不能继续使用。
+- 登录、当前用户和 Token 响应使用 `Cache-Control: no-store`。
+
+### M2 接口
+
+| 方法 | 路径 | 权限 | 结果 |
+|---|---|---|---|
+| `POST` | `/api/v1/auth/login` | 公开 | Access Token、过期时间和当前用户 |
+| `GET` | `/api/v1/auth/me` | 已登录 | 当前用户、组织、角色和权限 |
+| `POST` | `/api/v1/auth/logout` | 已登录 | `204 No Content` |
+| `GET` | `/api/v1/users` | `USER_MANAGE` | 分页用户列表 |
+| `GET` | `/api/v1/users/{userId}` | `USER_MANAGE` | 用户详情 |
+| `POST` | `/api/v1/users` | `USER_MANAGE` | `201 Created` 用户 |
+| `PATCH` | `/api/v1/users/{userId}/status` | `USER_MANAGE` | 启用或禁用后的用户 |
+| `PUT` | `/api/v1/users/{userId}/password` | `USER_MANAGE` | `204 No Content` |
+| `GET` | `/api/v1/organizations/tree` | `USER_MANAGE` | 组织树 |
+| `GET` | `/api/v1/roles` | `USER_MANAGE` | 角色及权限码 |
+| `GET` | `/api/v1/permissions` | `USER_MANAGE` | 权限目录 |
 
 ## 接口路径命名
 

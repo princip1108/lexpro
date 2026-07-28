@@ -9,6 +9,7 @@
 | [业务规则](BUSINESS_RULES.md) | [English](../BUSINESS_RULES.md) | 已确认规则和待确认事项 |
 | [数据库基线](DATABASE_BASELINE.md) | [English](../DATABASE_BASELINE.md) | 32 表基线和迁移规则 |
 | [技术决策](DECISIONS.md) | [English](../DECISIONS.md) | 技术方案及选择原因 |
+| [M2 认证安全审查](M2_SECURITY_REVIEW.md) | [English](../M2_SECURITY_REVIEW.md) | 认证控制、限制和验证证据 |
 
 其他中文入口：
 
