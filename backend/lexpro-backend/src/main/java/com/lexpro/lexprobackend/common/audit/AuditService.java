@@ -6,6 +6,7 @@ import com.lexpro.lexprobackend.common.web.RequestIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -22,6 +23,11 @@ public class AuditService {
 
     @Transactional
     public void record(AuditEvent event) {
+        operationLogMapper.insert(event, serializeDetail(event), currentRequestId());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordIndependent(AuditEvent event) {
         operationLogMapper.insert(event, serializeDetail(event), currentRequestId());
     }
 

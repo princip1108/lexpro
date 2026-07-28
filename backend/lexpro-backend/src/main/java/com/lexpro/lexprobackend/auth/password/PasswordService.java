@@ -25,6 +25,7 @@ public class PasswordService {
     public boolean matches(String rawPassword, String passwordHash) {
         return rawPassword != null
                 && passwordHash != null
+                && rawPassword.getBytes(StandardCharsets.UTF_8).length <= MAX_BCRYPT_BYTES
                 && passwordEncoder.matches(rawPassword, passwordHash);
     }
 

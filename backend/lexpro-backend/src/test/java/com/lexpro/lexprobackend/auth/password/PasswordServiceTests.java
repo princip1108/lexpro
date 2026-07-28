@@ -22,6 +22,7 @@ class PasswordServiceTests {
         assertTrue(hash.startsWith("$2"));
         assertTrue(passwordService.matches(rawPassword, hash));
         assertFalse(passwordService.matches("WrongPass1!", hash));
+        assertFalse(passwordService.matches("密".repeat(30), hash));
     }
 
     @Test

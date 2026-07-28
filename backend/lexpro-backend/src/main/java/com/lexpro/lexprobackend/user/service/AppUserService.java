@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Optional;
+
 @Service
 public class AppUserService {
 
@@ -48,6 +51,19 @@ public class AppUserService {
                         "USER_NOT_FOUND",
                         "The requested user does not exist"
                 ));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserAccount> findAccountForAuthentication(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        return appUserMapper.selectAccountByUsername(username.trim());
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> findPermissionCodes(long roleId) {
+        return List.copyOf(appUserMapper.selectPermissionCodes(roleId));
     }
 
     @Transactional(readOnly = true)
