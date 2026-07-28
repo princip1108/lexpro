@@ -1,5 +1,7 @@
 # LexPro AI Development Rules
 
+[中文说明](AGENTS.zh-CN.md)
+
 This file is the project-level source of instructions for AI-assisted development.
 
 ## Read before changing code
@@ -69,6 +71,7 @@ When sources conflict, stop and document the conflict instead of silently choosi
 - For APIs, verify the real HTTP status and response body.
 - Check that sensitive fields are absent from responses.
 - Update `docs/IMPLEMENTATION_PLAN.md` when a planned item changes state.
+- When a core English document changes, update its matching `docs/zh-CN` document in the same task.
 - Report what was verified and any remaining manual step or risk.
 
 ## Stop points requiring user approval
@@ -78,4 +81,3 @@ When sources conflict, stop and document the conflict instead of silently choosi
 - Adding infrastructure or an external service.
 - Sending real case data to an external AI provider.
 - Deploying, publishing, or changing production configuration.
-

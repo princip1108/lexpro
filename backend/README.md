@@ -1,5 +1,7 @@
 # LexPro Backend
 
+[中文说明](README.zh-CN.md)
+
 ## Stack
 
 - Java 21
@@ -56,4 +58,3 @@ The user endpoint is temporarily unauthenticated and will be protected during th
 ## Expected database check
 
 `GET /api/health/database` should return database `lexpro` and table count `32`.
-

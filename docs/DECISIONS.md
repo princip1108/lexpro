@@ -1,5 +1,7 @@
 # LexPro Technical Decisions
 
+[中文版](zh-CN/DECISIONS.md)
+
 | ID | Status | Decision | Reason |
 |---|---|---|---|
 | ADR-001 | Accepted | Use a modular Spring Boot monolith. | Current team/project scale does not justify distributed services. |
@@ -22,4 +24,3 @@
 - Sensitive identity-field encryption/masking mechanism.
 - Case status-transition matrix.
 - AI providers and data-classification restrictions.
-

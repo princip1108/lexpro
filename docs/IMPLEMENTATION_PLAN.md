@@ -1,5 +1,7 @@
 # LexPro Implementation Plan
 
+[中文版](zh-CN/IMPLEMENTATION_PLAN.md)
+
 > Updated: 2026-07-28  
 > Delivery method: small AI-assisted vertical slices, each independently tested and accepted.
 
@@ -95,6 +97,5 @@
 3. Focused automated tests pass.
 4. The affected application builds successfully.
 5. The real API or UI behavior is manually verifiable.
-6. Documentation and this plan reflect the result.
+6. Documentation, Chinese mirrors and this plan reflect the result.
 7. Git diff contains only intentional changes.
-

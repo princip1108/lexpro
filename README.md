@@ -1,5 +1,7 @@
 # LexPro
 
+[中文说明](README.zh-CN.md)
+
 LexPro is a legal case review application. The repository contains the Vue frontend, the Spring Boot backend, the final PostgreSQL schema, and the requirements/design source files.
 
 ## Repository layout
@@ -25,10 +27,10 @@ lexpro/
 
 ## Documentation
 
+- [Chinese documentation index](docs/zh-CN/README.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [API conventions](docs/API_CONVENTIONS.md)
 - [Business rules](docs/BUSINESS_RULES.md)
 - [Database baseline](docs/DATABASE_BASELINE.md)
 - [Technical decisions](docs/DECISIONS.md)
 - [Backend setup](backend/README.md)
-

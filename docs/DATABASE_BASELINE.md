@@ -1,5 +1,7 @@
 # LexPro Database Baseline
 
+[中文版](zh-CN/DATABASE_BASELINE.md)
+
 ## Final baseline
 
 - Database: PostgreSQL 15+ (local development currently uses PostgreSQL 18).
@@ -54,4 +56,3 @@ Expected count: `32`. Additional read-only checks are in `DBM/lexpro_schema_vali
 ## Vector fields
 
 `typical_case.embedding` and `case_recommendation.query_fact_embedding` remain dimensionless until the embedding model is approved. A later migration must set the same dimension on both columns and create the matching cosine HNSW index.
-

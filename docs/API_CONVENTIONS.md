@@ -1,5 +1,7 @@
 # LexPro API Conventions
 
+[中文版](zh-CN/API_CONVENTIONS.md)
+
 ## General
 
 - Base path: `/api/v1`.
@@ -75,4 +77,3 @@ Errors use Spring `ProblemDetail` (`application/problem+json`) with stable exten
 - Use nested resources where the parent authorization boundary matters: `/cases/{caseId}/parties`.
 - Use explicit command resources for business transitions: `/cases/{caseId}/status-transitions`.
 - Do not encode verbs such as `getUserList` in resource paths.
-

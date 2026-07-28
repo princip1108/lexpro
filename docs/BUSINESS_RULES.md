@@ -1,5 +1,7 @@
 # LexPro Confirmed Business Rules
 
+[中文版](zh-CN/BUSINESS_RULES.md)
+
 This document contains rules already supported by the final database and prior project decisions. Items under "Open decisions" must be confirmed before implementation.
 
 ## Users, organizations and permissions
@@ -54,4 +56,3 @@ This document contains rules already supported by the final database and prior p
 - MinerU and model providers, authentication, timeout and concurrency limits.
 - Report template JSON contract and Word/PDF visual format.
 - AI evaluation thresholds and whether external providers may receive real case data.
-
