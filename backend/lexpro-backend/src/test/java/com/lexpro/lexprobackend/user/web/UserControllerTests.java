@@ -4,6 +4,7 @@ import com.lexpro.lexprobackend.user.service.AppUserService;
 import com.lexpro.lexprobackend.common.web.RequestIdFilter;
 import com.lexpro.lexprobackend.common.web.dto.PageRequest;
 import com.lexpro.lexprobackend.common.web.dto.PageResponse;
+import com.lexpro.lexprobackend.user.web.dto.UserDetailResponse;
 import com.lexpro.lexprobackend.user.web.dto.UserSummaryResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,31 @@ class UserControllerTests {
                 .andExpect(jsonPath("$.size").value(20))
                 .andExpect(jsonPath("$.totalItems").value(1))
                 .andExpect(jsonPath("$.totalPages").value(1));
+    }
+
+    @Test
+    void shouldReturnUserDetailsWithoutCredentialData() throws Exception {
+        UserDetailResponse user = new UserDetailResponse(
+                1L,
+                "admin",
+                "System Administrator",
+                "ACTIVE",
+                new UserDetailResponse.OrganizationSummary(2L, "LEXPRO", "LexPro"),
+                new UserDetailResponse.RoleSummary(3L, "ADMIN", "System administrator"),
+                List.of("USER_MANAGE"),
+                OffsetDateTime.parse("2026-07-28T00:00:00+08:00"),
+                OffsetDateTime.parse("2026-07-28T00:00:00+08:00")
+        );
+        when(appUserService.getUser(1L)).thenReturn(user);
+
+        mockMvc.perform(get("/api/v1/users/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("admin"))
+                .andExpect(jsonPath("$.organization.code").value("LEXPRO"))
+                .andExpect(jsonPath("$.role.code").value("ADMIN"))
+                .andExpect(jsonPath("$.permissions[0]").value("USER_MANAGE"))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
     }
 
     @Test
