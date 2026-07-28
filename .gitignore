@@ -29,6 +29,7 @@ application-local.yml
 logs/
 uploads/
 storage/
+backups/
 
 # OS and temporary files
 .DS_Store
@@ -37,4 +38,3 @@ desktop.ini
 ~$*
 *.tmp
 *.bak
-
