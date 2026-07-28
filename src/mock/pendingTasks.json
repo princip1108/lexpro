@@ -1,0 +1,20 @@
+{
+  "stats": [
+    { "label": "今日待办", "value": "4", "color": "#2f72f6" },
+    { "label": "即将超期", "value": "2", "color": "#ffa940" },
+    { "label": "已超期", "value": "1", "color": "#f04f5f" },
+    { "label": "待复核", "value": "3", "color": "#15b8a6" }
+  ],
+  "tasks": [
+    { "title": "张某某涉嫌诈骗案审查报告复核", "type": "报告复核", "owner": "周某", "deadline": "2026-07-02 18:00", "priority": "高", "status": "待处理" },
+    { "title": "李某某非法经营案证据链检查", "type": "证据审查", "owner": "林某", "deadline": "2026-07-03 12:00", "priority": "中", "status": "处理中" },
+    { "title": "某公司公益诉讼线索材料补录", "type": "材料补录", "owner": "赵某", "deadline": "2026-07-01 18:00", "priority": "高", "status": "已超期" },
+    { "title": "王某某帮信案典型案例引用确认", "type": "案例引用", "owner": "程某", "deadline": "2026-07-04 10:00", "priority": "低", "status": "待确认" }
+  ],
+  "timeline": [
+    { "time": "09:30", "title": "系统推送 2 条报告复核任务" },
+    { "time": "10:10", "title": "张某某诈骗案完成 MinerU 材料解析" },
+    { "time": "11:20", "title": "典型案例推送结果等待承办人确认" },
+    { "time": "14:00", "title": "公益诉讼线索任务触发超期提醒" }
+  ]
+}

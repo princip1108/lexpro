@@ -1,0 +1,40 @@
+# Frontend dependencies and build output
+node_modules/
+dist/
+
+# Backend build output
+**/target/
+**/build/
+
+# IDE metadata
+.idea/
+**/.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+
+# Secrets and local environment overrides
+.env
+.env.*
+!.env.example
+application-local.properties
+application-local.yml
+
+# Runtime files
+*.log
+logs/
+uploads/
+storage/
+
+# OS and temporary files
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
+*.bak
+

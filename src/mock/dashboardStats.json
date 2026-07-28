@@ -1,0 +1,14 @@
+{
+  "todo": [
+    { "label": "任务完成程度", "display": "30%", "value": 30, "color": "#2f72f6" },
+    { "label": "在办案件", "display": "2件", "value": 72, "color": "#46c93a" },
+    { "label": "待审案件", "display": "1件", "value": 45, "color": "#ffa940" },
+    { "label": "超期案件", "display": "1件", "value": 42, "color": "#f04f5f" }
+  ],
+  "categories": [
+    { "name": "刑事案件", "count": 22, "color": "#2f72f6" },
+    { "name": "民事案件", "count": 15, "color": "#10b981" },
+    { "name": "行政案件", "count": 15, "color": "#14b8a6" },
+    { "name": "公益诉讼案件", "count": 22, "color": "#ff8a00" }
+  ]
+}

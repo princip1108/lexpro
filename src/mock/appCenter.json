@@ -1,0 +1,9 @@
+[
+  { "title": "案件管理", "icon": "FolderOpened", "color": "#2f72f6", "path": "/todo-cases" },
+  { "title": "审查报告", "icon": "DocumentChecked", "color": "#15b8a6", "path": "/review-report" },
+  { "title": "法律要素", "icon": "Aim", "color": "#5470ff", "path": "/legal-elements" },
+  { "title": "文书实体", "icon": "Tickets", "color": "#13c2c2", "path": "/document-entities" },
+  { "title": "案例摘要", "icon": "Memo", "color": "#ffa940", "path": "/summary" },
+  { "title": "典型案例", "icon": "CollectionTag", "color": "#49b735", "path": "/case-recommend" },
+  { "title": "知识库", "icon": "Reading", "color": "#597ef7", "path": "/case-recommend" }
+]

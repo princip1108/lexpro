@@ -1,0 +1,22 @@
+{
+  "stats": [
+    { "label": "部门数量", "value": "6", "desc": "覆盖四大检察业务条线" },
+    { "label": "在岗人员", "value": "42", "desc": "承办人 28 人，管理员 4 人" },
+    { "label": "本月协同", "value": "126", "desc": "跨部门案件流转记录" },
+    { "label": "模型账号", "value": "38", "desc": "已完成权限配置" }
+  ],
+  "departments": [
+    { "name": "第一检察部", "leader": "周某", "people": 12, "cases": 28, "focus": "普通犯罪、经济犯罪审查起诉" },
+    { "name": "第二检察部", "leader": "林某", "people": 9, "cases": 18, "focus": "重大犯罪、职务犯罪审查" },
+    { "name": "第三检察部", "leader": "赵某", "people": 7, "cases": 15, "focus": "刑事执行、控告申诉业务" },
+    { "name": "第四检察部", "leader": "许某", "people": 6, "cases": 11, "focus": "民事行政与公益诉讼" },
+    { "name": "案件管理办公室", "leader": "程某", "people": 5, "cases": 36, "focus": "流程监控、质量评查、数据管理" },
+    { "name": "数字检察办公室", "leader": "韩某", "people": 3, "cases": 9, "focus": "模型配置、知识库维护、应用支撑" }
+  ],
+  "members": [
+    { "name": "程某", "department": "案件管理办公室", "role": "系统管理员", "status": "在线", "workload": 86 },
+    { "name": "周某", "department": "第一检察部", "role": "承办检察官", "status": "办案中", "workload": 74 },
+    { "name": "林某", "department": "第二检察部", "role": "承办检察官", "status": "在线", "workload": 68 },
+    { "name": "赵某", "department": "第四检察部", "role": "公益诉讼检察官", "status": "外勤", "workload": 52 }
+  ]
+}
