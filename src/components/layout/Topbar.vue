@@ -5,10 +5,16 @@
       <router-link to="/dashboard" class="top-link" :class="{ active: route.path === '/dashboard' }">
         个人中心
       </router-link>
-      <router-link to="/organization" class="top-link" :class="{ active: route.path === '/organization' }">
+      <router-link
+        v-if="hasPermission('USER_MANAGE')"
+        to="/organization"
+        class="top-link"
+        :class="{ active: route.path === '/organization' }"
+      >
         组织管理
       </router-link>
       <router-link
+        v-if="hasPermission('CONTENT_MANAGE')"
         to="/content-management"
         class="top-link"
         :class="{ active: route.path === '/content-management' }"
@@ -33,13 +39,15 @@
       />
       <el-dropdown>
         <span class="user">
-          系统管理员
+          {{ currentUser?.realName || currentUser?.username }}
           <el-icon><ArrowDown /></el-icon>
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item>个人信息</el-dropdown-item>
-            <el-dropdown-item divided @click="$router.push('/login')">退出登录</el-dropdown-item>
+            <el-dropdown-item disabled>{{ currentUser?.role?.name }}</el-dropdown-item>
+            <el-dropdown-item divided :disabled="loggingOut" @click="handleLogout">
+              退出登录
+            </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -49,13 +57,31 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Fold, Monitor, Search } from '@element-plus/icons-vue'
+import { logout } from '../../api/auth'
+import { clearSession, currentUser, hasPermission } from '../../auth/session'
 import todoCases from '../../mock/todoCases.json'
 
 const route = useRoute()
+const router = useRouter()
 const keyword = ref('')
+const loggingOut = ref(false)
 const pendingCount = todoCases.filter((item) => item.status !== '已完成').length
+
+const handleLogout = async () => {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  try {
+    await logout()
+  } catch {
+    // Local logout must still complete when the backend is unavailable.
+  } finally {
+    clearSession()
+    loggingOut.value = false
+    await router.replace('/login')
+  }
+}
 </script>
 
 <style scoped>

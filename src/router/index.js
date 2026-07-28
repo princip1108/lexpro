@@ -11,10 +11,11 @@ import CaseRecommend from '../views/CaseRecommend.vue'
 import Organization from '../views/Organization.vue'
 import ContentManagement from '../views/ContentManagement.vue'
 import PendingTasks from '../views/PendingTasks.vue'
+import { hasPermission, hasValidSession } from '../auth/session'
 
 const routes = [
   { path: '/', redirect: '/login' },
-  { path: '/login', component: Login, meta: { title: '登录' } },
+  { path: '/login', component: Login, meta: { title: '登录', public: true } },
   {
     path: '/',
     component: AppLayout,
@@ -26,14 +27,42 @@ const routes = [
       { path: 'document-entities', component: DocumentEntities, meta: { title: '文书实体识别' } },
       { path: 'summary', component: Summary, meta: { title: '案例摘要生成' } },
       { path: 'case-recommend', component: CaseRecommend, meta: { title: '典型案例推送' } },
-      { path: 'organization', component: Organization, meta: { title: '组织管理' } },
-      { path: 'content-management', component: ContentManagement, meta: { title: '内容管理' } },
+      {
+        path: 'organization',
+        component: Organization,
+        meta: { title: '组织管理', permission: 'USER_MANAGE' }
+      },
+      {
+        path: 'content-management',
+        component: ContentManagement,
+        meta: { title: '内容管理', permission: 'CONTENT_MANAGE' }
+      },
       { path: 'pending-tasks', component: PendingTasks, meta: { title: '待办任务' } }
     ]
   }
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+
+router.beforeEach((to) => {
+  const authenticated = hasValidSession()
+  if (to.meta.public) {
+    return authenticated ? '/dashboard' : true
+  }
+  if (!authenticated) {
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.permission && !hasPermission(to.meta.permission)) {
+    return '/dashboard'
+  }
+  return true
+})
+
+router.afterEach((to) => {
+  document.title = to.meta.title ? `${to.meta.title} - LexPro` : 'LexPro'
+})
+
+export default router

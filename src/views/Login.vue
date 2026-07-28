@@ -23,11 +23,23 @@
         <h1>LexPro</h1>
         <p>法律大模型与检察业务融合应用系统</p>
       </div>
-      <el-form :model="form" class="login-form" @submit.prevent>
-        <el-form-item>
-          <el-input v-model="form.account" size="large" placeholder="请输入账号" :prefix-icon="User" />
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        class="login-form"
+        @submit.prevent="submitLogin"
+      >
+        <el-form-item prop="username">
+          <el-input
+            v-model="form.username"
+            size="large"
+            placeholder="请输入账号"
+            :prefix-icon="User"
+            autocomplete="username"
+          />
         </el-form-item>
-        <el-form-item>
+        <el-form-item prop="password">
           <el-input
             v-model="form.password"
             size="large"
@@ -35,32 +47,80 @@
             show-password
             placeholder="请输入登录密码"
             :prefix-icon="Lock"
+            autocomplete="current-password"
+            @keyup.enter="submitLogin"
           />
         </el-form-item>
         <div class="form-options">
-          <el-checkbox v-model="form.remember">记住密码</el-checkbox>
-          <el-link type="info" :underline="false">忘记密码</el-link>
+          <el-checkbox v-model="form.remember">保持登录状态</el-checkbox>
+          <span class="password-help">请联系管理员重置密码</span>
         </div>
-        <el-button type="primary" size="large" class="login-button" @click="login">登录</el-button>
+        <el-button
+          native-type="submit"
+          type="primary"
+          size="large"
+          class="login-button"
+          :loading="submitting"
+        >
+          登录
+        </el-button>
       </el-form>
     </el-card>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Lock, User } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { login } from '../api/auth'
+import { saveSession } from '../auth/session'
 
+const route = useRoute()
 const router = useRouter()
+const formRef = ref()
+const submitting = ref(false)
 const form = reactive({
-  account: 'admin',
-  password: '123456',
+  username: '',
+  password: '',
   remember: false
 })
+const rules = {
+  username: [
+    { required: true, message: '请输入账号', trigger: 'blur' },
+    { max: 100, message: '账号不能超过 100 个字符', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入登录密码', trigger: 'blur' },
+    { max: 72, message: '密码不能超过 72 个字符', trigger: 'blur' }
+  ]
+}
 
-const login = () => {
-  router.push('/dashboard')
+const submitLogin = async () => {
+  if (submitting.value) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    const response = await login({
+      username: form.username.trim(),
+      password: form.password
+    })
+    saveSession(response, form.remember)
+    form.password = ''
+    const redirect = typeof route.query.redirect === 'string'
+      && route.query.redirect.startsWith('/')
+      && !route.query.redirect.startsWith('//')
+      ? route.query.redirect
+      : '/dashboard'
+    await router.replace(redirect)
+  } catch (error) {
+    ElMessage.error(error.message || '登录失败')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -294,6 +354,11 @@ const login = () => {
   align-items: center;
   justify-content: space-between;
   margin: -2px 0 24px;
+}
+
+.password-help {
+  color: #7a8797;
+  font-size: 13px;
 }
 
 .login-button {
