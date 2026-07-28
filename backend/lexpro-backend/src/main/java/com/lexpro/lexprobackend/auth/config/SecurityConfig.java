@@ -128,6 +128,11 @@ public class SecurityConfig {
             if (!"ACTIVE".equals(account.getStatus())) {
                 throw invalidToken("The access token account is disabled");
             }
+            if (account.getUpdatedAt() != null
+                    && jwt.getIssuedAt() != null
+                    && account.getUpdatedAt().toInstant().isAfter(jwt.getIssuedAt())) {
+                throw invalidToken("The access token was issued before the account was changed");
+            }
 
             List<SimpleGrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority("ROLE_" + account.getRoleCode()));

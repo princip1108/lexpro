@@ -1,6 +1,7 @@
 package com.lexpro.lexprobackend.user.web;
 
 import com.lexpro.lexprobackend.user.service.AppUserService;
+import com.lexpro.lexprobackend.user.service.UserAdministrationService;
 import com.lexpro.lexprobackend.common.web.RequestIdFilter;
 import com.lexpro.lexprobackend.common.web.dto.PageRequest;
 import com.lexpro.lexprobackend.common.web.dto.PageResponse;
@@ -33,6 +34,9 @@ class UserControllerTests {
 
     @MockitoBean
     private AppUserService appUserService;
+
+    @MockitoBean
+    private UserAdministrationService userAdministrationService;
 
     @Test
     void shouldReturnUserSummariesWithoutPassword() throws Exception {

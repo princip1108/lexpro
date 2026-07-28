@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.net.URI;
 import java.util.LinkedHashMap;
@@ -41,6 +42,21 @@ public class GlobalExceptionHandler {
                 exception.getTitle(),
                 exception.getErrorCode(),
                 exception.getMessage(),
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> handleAccessDenied(
+            AccessDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.FORBIDDEN,
+                "Access denied",
+                "ACCESS_DENIED",
+                "You do not have permission to access this resource",
                 request,
                 null
         );
