@@ -30,13 +30,13 @@
 
 ## M1 - 后端公共规范
 
-- [ ] M1-S1 使用标准 `ProblemDetail` 和全局异常处理。
-- [ ] M1-S2 为请求 DTO 添加 Bean Validation，并返回字段错误。
-- [ ] M1-S3 建立统一分页请求和响应协议。
-- [ ] M1-S4 集成 SpringDoc OpenAPI 和本地 Swagger UI。
-- [ ] M1-S5 配置明确的 Vue 开发环境跨域规则。
-- [ ] M1-S6 增加请求 ID、结构化日志和审计辅助组件。
-- [ ] M1-S7 完成本里程碑代码审查和回归测试。
+- [x] M1-S1 使用标准 `ProblemDetail` 和全局异常处理。
+- [x] M1-S2 为请求 DTO 添加 Bean Validation，并返回字段错误。
+- [x] M1-S3 建立统一分页请求和响应协议。
+- [x] M1-S4 集成 SpringDoc OpenAPI 和本地 Swagger UI。
+- [x] M1-S5 配置明确的 Vue 开发环境跨域规则。
+- [x] M1-S6 增加请求 ID、结构化日志和审计辅助组件。
+- [x] M1-S7 完成本里程碑代码审查和回归测试。
 
 ## M2 - 认证、用户和组织
 

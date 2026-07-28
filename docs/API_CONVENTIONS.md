@@ -29,6 +29,13 @@
 
 Successful responses return the resource or operation result directly. Do not wrap every response in `{code, message, data}`.
 
+## Request correlation
+
+- Every HTTP response includes `X-Request-Id`.
+- Clients may provide `X-Request-Id` using 8 to 64 ASCII letters, digits, dots, underscores, or hyphens.
+- Missing or unsafe values are replaced by a server-generated UUID.
+- The same value appears in request completion logs, error responses, and audit records created during the request.
+
 ## Errors
 
 Errors use Spring `ProblemDetail` (`application/problem+json`) with stable extensions:
@@ -54,6 +61,7 @@ Errors use Spring `ProblemDetail` (`application/problem+json`) with stable exten
 
 - Request: `page` starts at 1, `size` defaults to 20 and is limited to 100.
 - Sorting must use an endpoint-specific allowlist; never pass raw field names into SQL.
+- The shared Java contracts are `PageRequest` and `PageResponse<T>`.
 
 ```json
 {

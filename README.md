@@ -21,8 +21,8 @@ lexpro/
 ## Current status
 
 - Frontend prototype: implemented with mock JSON data.
-- Database: V1 + V2 + V3 complete, 32 tables in the `lexpro` schema.
-- Backend: starts successfully, connects to PostgreSQL, exposes health checks and a read-only user list.
+- Database: V1 + V2 + V3 complete, with 32 business tables in the `lexpro` schema.
+- Backend: includes health checks, a paged read-only user list, standard errors, validation, OpenAPI, development CORS, request correlation, and an audit helper.
 - Authentication, case workflows, dossier storage, AI processing, reports, and recommendation APIs are not implemented yet.
 
 ## Documentation

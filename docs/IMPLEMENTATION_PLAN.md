@@ -30,13 +30,13 @@
 
 ## M1 - Backend conventions
 
-- [ ] M1-S1 Standard `ProblemDetail` error responses and global exception handling.
-- [ ] M1-S2 Bean Validation for request DTOs and field error responses.
-- [ ] M1-S3 Shared pagination request/response contract.
-- [ ] M1-S4 SpringDoc OpenAPI and local Swagger UI.
-- [ ] M1-S5 Explicit Vue development CORS configuration.
-- [ ] M1-S6 Request ID, structured logging and audit helper.
-- [ ] M1-S7 Milestone code review and regression tests.
+- [x] M1-S1 Standard `ProblemDetail` error responses and global exception handling.
+- [x] M1-S2 Bean Validation for request DTOs and field error responses.
+- [x] M1-S3 Shared pagination request/response contract.
+- [x] M1-S4 SpringDoc OpenAPI and local Swagger UI.
+- [x] M1-S5 Explicit Vue development CORS configuration.
+- [x] M1-S6 Request ID, structured logging and audit helper.
+- [x] M1-S7 Milestone code review and regression tests.
 
 ## M2 - Authentication, users and organizations
 

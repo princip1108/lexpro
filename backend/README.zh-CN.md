@@ -7,6 +7,8 @@
 - Maven
 - MyBatis-Plus 3.5.17
 - PostgreSQL
+- Flyway
+- SpringDoc OpenAPI
 
 Maven 工程位于 `backend/lexpro-backend`。
 
@@ -23,6 +25,7 @@ LEXPRO_DB_PASSWORD=<你的 PostgreSQL 密码>
 ```text
 LEXPRO_DB_URL=jdbc:postgresql://127.0.0.1:5432/lexpro?currentSchema=lexpro
 LEXPRO_DB_USERNAME=postgres
+LEXPRO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
 不能把真实密码写入 `application.properties` 或提交到 Git。
@@ -61,10 +64,26 @@ LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
 ```http
 GET /api/health
 GET /api/health/database
-GET /api/v1/users
+GET /api/v1/users?page=1&size=20
 ```
 
 用户列表目前暂未鉴权，完成认证里程碑后会增加权限保护。
+
+本地接口文档：
+
+```text
+http://localhost:8080/swagger-ui.html
+http://localhost:8080/v3/api-docs
+```
+
+## 公共 API 基础
+
+- 错误响应使用 `application/problem+json`，包含稳定的 `errorCode`、`requestId` 和可选的 `fieldErrors`。
+- 分页从第 1 页开始，默认每页 20 条，最大 100 条。
+- 每个响应都包含 `X-Request-Id`；格式安全的客户端请求 ID 会被保留。
+- 请求完成日志包含方法、路径、状态码、耗时和请求 ID。
+- `AuditService` 把安全敏感或改变业务状态的事件写入现有 `operation_log` 表。
+- CORS 仅对配置的 Vue 开发来源和 `/api/**` 路径生效。
 
 ## 数据库检查预期
 

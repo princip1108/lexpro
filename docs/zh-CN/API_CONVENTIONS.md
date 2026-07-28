@@ -29,6 +29,13 @@
 
 成功响应直接返回资源或操作结果，不为每个响应重复包装 `{code, message, data}`。
 
+## 请求关联
+
+- 每个 HTTP 响应都包含 `X-Request-Id`。
+- 客户端可以传入由 8 到 64 个 ASCII 字母、数字、点、下划线或连字符组成的 `X-Request-Id`。
+- 缺失或格式不安全的值会替换为服务端生成的 UUID。
+- 同一个值会出现在请求完成日志、错误响应以及本次请求产生的审计记录中。
+
 ## 错误响应
 
 错误使用 Spring `ProblemDetail`（`application/problem+json`），并增加稳定扩展字段：
@@ -55,6 +62,7 @@
 - 请求参数 `page` 从 1 开始。
 - `size` 默认 20，最大 100。
 - 排序字段必须使用每个接口自己的允许列表，不能把前端传入的原始字段名直接拼入 SQL。
+- Java 公共分页契约为 `PageRequest` 和 `PageResponse<T>`。
 
 ```json
 {

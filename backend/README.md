@@ -9,6 +9,8 @@
 - Maven
 - MyBatis-Plus 3.5.17
 - PostgreSQL
+- Flyway
+- SpringDoc OpenAPI
 
 The Maven project is in `backend/lexpro-backend`.
 
@@ -25,6 +27,7 @@ Optional overrides:
 ```text
 LEXPRO_DB_URL=jdbc:postgresql://127.0.0.1:5432/lexpro?currentSchema=lexpro
 LEXPRO_DB_USERNAME=postgres
+LEXPRO_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
 Do not put a real password in `application.properties` or commit it to Git.
@@ -61,10 +64,26 @@ With Java 21 available in `JAVA_HOME`:
 ```http
 GET /api/health
 GET /api/health/database
-GET /api/v1/users
+GET /api/v1/users?page=1&size=20
 ```
 
 The user endpoint is temporarily unauthenticated and will be protected during the authentication milestone.
+
+Local API documentation:
+
+```text
+http://localhost:8080/swagger-ui.html
+http://localhost:8080/v3/api-docs
+```
+
+## Common API foundation
+
+- Errors use `application/problem+json` with stable `errorCode`, `requestId`, and optional `fieldErrors` properties.
+- Pagination starts at page 1, defaults to 20 items, and is limited to 100 items.
+- Every response includes `X-Request-Id`; a safe client-provided ID is preserved.
+- Request completion logs include method, path, status, duration, and request ID.
+- `AuditService` writes security-sensitive or state-changing events to the existing `operation_log` table.
+- CORS is limited to the configured Vue development origins and `/api/**` routes.
 
 ## Expected database check
 
