@@ -11,4 +11,5 @@ SELECT
         SELECT count(*)
         FROM pg_tables
         WHERE schemaname = 'lexpro'
+          AND tablename <> 'flyway_schema_history'
     ) AS table_count;

@@ -90,7 +90,9 @@ CREATE INDEX ix_typical_case_embedding_hnsw
 ```sql
 SELECT count(*) AS lexpro_table_count
 FROM information_schema.tables
-WHERE table_schema = 'lexpro' AND table_type = 'BASE TABLE';
+WHERE table_schema = 'lexpro'
+  AND table_type = 'BASE TABLE'
+  AND table_name <> 'flyway_schema_history';
 
 SELECT to_regclass('lexpro.dossier_folder');
 SELECT to_regclass('lexpro.organization_unit');
@@ -98,4 +100,4 @@ SELECT to_regclass('lexpro.auth_role');
 SELECT to_regclass('lexpro.work_task');
 ```
 
-完整执行后 `lexpro_table_count` 应为 `32`。
+完整执行后 `lexpro_table_count` 应为 `32`。完成 Flyway 基线登记后还会存在基础设施表 `flyway_schema_history`，因此物理表总数为 33；该表不属于业务 ER 图。

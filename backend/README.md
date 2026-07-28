@@ -29,6 +29,17 @@ LEXPRO_DB_USERNAME=postgres
 
 Do not put a real password in `application.properties` or commit it to Git.
 
+## Flyway safety
+
+Flyway is disabled by default while the existing V3 development database awaits an approved baseline:
+
+```text
+LEXPRO_FLYWAY_ENABLED=false
+LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
+```
+
+Do not enable the baseline flag against the existing database until it has been backed up and the 32-business-table validation has passed. The one-time baseline must be removed immediately after `lexpro.flyway_schema_history` records version 3. New schema work starts at V4.
+
 ## Run in IntelliJ IDEA
 
 1. Open `backend/lexpro-backend` as the Maven project.
@@ -57,4 +68,4 @@ The user endpoint is temporarily unauthenticated and will be protected during th
 
 ## Expected database check
 
-`GET /api/health/database` should return database `lexpro` and table count `32`.
+`GET /api/health/database` should return database `lexpro` and business table count `32`. The endpoint deliberately excludes Flyway's `flyway_schema_history` infrastructure table.

@@ -45,7 +45,7 @@ When sources conflict, stop and document the conflict instead of silently choosi
 
 ## Database rules
 
-- The current baseline is exactly 32 tables after V1 + V2 + V3.
+- The current baseline is exactly 32 business tables after V1 + V2 + V3; Flyway metadata tables are infrastructure and are excluded from this count.
 - V1/V2/V3 are one-time scripts and must never be rerun against the upgraded development database.
 - Do not edit already-applied migration files for new requirements. Add a new migration after the baseline.
 - Do not execute schema changes, destructive SQL, data deletion, or bulk updates without explicit user approval and a backup/validation plan.

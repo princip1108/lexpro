@@ -27,6 +27,17 @@ LEXPRO_DB_USERNAME=postgres
 
 不能把真实密码写入 `application.properties` 或提交到 Git。
 
+## Flyway 安全说明
+
+现有 V3 开发数据库尚未经过批准的基线登记，因此 Flyway 默认关闭：
+
+```text
+LEXPRO_FLYWAY_ENABLED=false
+LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
+```
+
+在现有数据库完成备份并通过32张业务表验证前，不能开启baseline开关。`lexpro.flyway_schema_history` 成功登记版本3后，必须立即删除一次性baseline开关。后续结构修改从V4开始。
+
 ## 在中文版 IntelliJ IDEA 中运行
 
 1. 将 `backend/lexpro-backend` 作为 Maven 工程打开。
@@ -57,4 +68,4 @@ GET /api/v1/users
 
 ## 数据库检查预期
 
-访问 `GET /api/health/database` 应返回数据库名称 `lexpro` 和表数量 `32`。
+访问 `GET /api/health/database` 应返回数据库名称 `lexpro` 和业务表数量 `32`。该接口会有意排除 Flyway 的基础设施表 `flyway_schema_history`。

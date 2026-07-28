@@ -8,7 +8,8 @@
 - 数据库名称：`lexpro`。
 - 业务 Schema：`lexpro`。
 - 扩展：`public` Schema 中的 `pgvector`。
-- 执行全部脚本后的最终表数：32。
+- 执行全部脚本后的最终业务表数：32。
+- 完成 Flyway 基线登记后，Schema 中包含 32 张业务表以及 1 张基础设施表 `flyway_schema_history`。
 
 三个一次性脚本为：
 
@@ -28,19 +29,31 @@ SELECT current_database(), current_user;
 SELECT count(*)
 FROM information_schema.tables
 WHERE table_schema = 'lexpro'
-  AND table_type = 'BASE TABLE';
+  AND table_type = 'BASE TABLE'
+  AND table_name <> 'flyway_schema_history';
 ```
 
-预期表数为 `32`。其他只读检查位于 `DBM/lexpro_schema_validation.sql` 和 `DBM/SCHEMA_UPGRADE_README.md`。
+预期业务表数为 `32`。Flyway 基线登记前，这也是物理表总数；登记后 Schema 中会有 33 张物理表，其中 `flyway_schema_history` 是 Flyway 基础设施元数据，不计入业务验证和 ER 图。其他只读检查位于 `DBM/lexpro_schema_validation.sql` 和 `DBM/SCHEMA_UPGRADE_README.md`。
 
 ## 后续 Flyway 策略
 
-1. 将 V1/V2/V3 原样保留为历史基线。
-2. 只有在备份和审查完成后，才能把现有非空开发数据库标记为基线版本 3。
-3. 新结构修改从 `V4__<description>.sql` 开始。
-4. 每个迁移只向前执行；在 PostgreSQL 允许时使用事务，并提供验证 SQL。
-5. 迁移必须先在可丢弃或测试数据库执行，再进入开发或生产数据库。
-6. 应用启动不能被视为自动批准修改未备份的生产数据库。
+1. `DBM` 中已经审查的 V1/V2/V3 原文件保持不变，作为历史来源。
+2. 后端资源中的迁移副本只删除最外层 `BEGIN/COMMIT`，因为每个迁移的事务由 Flyway 管理；每个副本记录来源文件的 SHA-256。
+3. Flyway和baseline-on-migrate默认关闭，并通过环境变量控制。
+4. 接触现有数据库前，先在可丢弃数据库执行 V1/V2/V3 并验证最终32表结构。
+5. 只有完成备份、只读验证和明确批准后，才能把现有非空开发数据库登记为版本3基线。
+6. 创建基线记录后立即移除一次性的baseline开关。
+7. 新结构修改从 `V4__<description>.sql` 开始。
+8. 每个迁移只向前执行；在PostgreSQL允许时使用事务，并提供验证SQL。
+9. 应用启动不能被视为自动批准修改未备份的生产数据库。
+
+当前安全控制：
+
+```text
+LEXPRO_FLYWAY_ENABLED=false
+LEXPRO_FLYWAY_BASELINE_ON_MIGRATE=false
+spring.flyway.clean-disabled=true
+```
 
 ## 设计不变量
 

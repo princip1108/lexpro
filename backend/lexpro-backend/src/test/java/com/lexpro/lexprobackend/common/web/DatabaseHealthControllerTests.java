@@ -29,7 +29,7 @@ class DatabaseHealthControllerTests {
     void shouldReturnDatabaseHealth() throws Exception {
         when(jdbcTemplate.queryForObject(eq("SELECT current_database()"), eq(String.class)))
                 .thenReturn("lexpro");
-        when(jdbcTemplate.queryForObject(contains("information_schema.tables"), eq(Long.class)))
+        when(jdbcTemplate.queryForObject(contains("table_name <> 'flyway_schema_history'"), eq(Long.class)))
                 .thenReturn(32L);
 
         mockMvc.perform(get("/api/health/database"))

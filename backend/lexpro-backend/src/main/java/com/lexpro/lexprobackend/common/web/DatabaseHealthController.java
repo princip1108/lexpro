@@ -14,6 +14,7 @@ public class DatabaseHealthController {
             FROM information_schema.tables
             WHERE table_schema = 'lexpro'
               AND table_type = 'BASE TABLE'
+              AND table_name <> 'flyway_schema_history'
             """;
 
     private final JdbcTemplate jdbcTemplate;
