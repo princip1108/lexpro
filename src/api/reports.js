@@ -1,0 +1,12 @@
+import { request } from './http'
+
+export const listReports = (caseId, reportType = '') => request(`/api/v1/cases/${caseId}/reports${reportType ? `?reportType=${encodeURIComponent(reportType)}` : ''}`)
+export const listReportTemplates = (status = '') => request(`/api/v1/report-templates${status ? `?status=${status}` : ''}`)
+export const listCaseCards = (caseId) => request(`/api/v1/cases/${caseId}/case-cards`)
+export const startReport = (caseId, payload) => request(`/api/v1/cases/${caseId}/report-jobs`, { method: 'POST', body: payload })
+export const getReportJob = (caseId, requestId) => request(`/api/v1/cases/${caseId}/report-jobs/${requestId}`)
+export const getReport = (caseId, reportId) => request(`/api/v1/cases/${caseId}/reports/${reportId}`)
+export const submitReportReview = (caseId, reportId, lockVersion) => request(`/api/v1/cases/${caseId}/reports/${reportId}/review-submission`, { method: 'PUT', body: { lockVersion } })
+export const returnReport = (caseId, reportId, lockVersion, reason) => request(`/api/v1/cases/${caseId}/reports/${reportId}/review-return`, { method: 'PUT', body: { lockVersion, reason } })
+export const finalizeReport = (caseId, reportId, lockVersion) => request(`/api/v1/cases/${caseId}/reports/${reportId}/finalization`, { method: 'PUT', body: { lockVersion } })
+export const exportReport = (caseId, reportId, format) => request(`/api/v1/cases/${caseId}/reports/${reportId}/exports/${format}`, { responseType: 'blob', timeout: 60000 })

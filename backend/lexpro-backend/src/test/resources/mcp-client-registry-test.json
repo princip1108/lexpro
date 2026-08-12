@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "mcp-client-registry-v1",
+  "clients": [
+    {
+      "clientId": "automated-test-client",
+      "enabled": true,
+      "authorities": ["AI_EXECUTE"],
+      "tokens": [
+        {
+          "tokenId": "test-token",
+          "tokenSha256": "43c5b437bf0c7ad8d77c110a03afb03cc617ddab1ca298e04aa6e7b5ffcafedd",
+          "expiresAt": "2099-01-01T00:00:00Z"
+        }
+      ]
+    }
+  ]
+}

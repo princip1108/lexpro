@@ -5,6 +5,9 @@ dist/
 # Backend build output
 **/target/
 **/build/
+**/__pycache__/
+**/.pytest_cache/
+**/.venv/
 
 # IDE metadata
 .idea/
@@ -23,12 +26,21 @@ dist/
 !.env.example
 application-local.properties
 application-local.yml
+mcp-client-registry*.json
+!backend/lexpro-backend/src/test/resources/mcp-client-registry-test.json
+
+# Generated external MCP client delivery packages (contain private keys/tokens)
+deployment/mcp-clients/
+
+# Local source draft with document metadata; keep out of the public repository
+/2.docx
 
 # Runtime files
 *.log
 logs/
 uploads/
-storage/
+/storage/
+/backend/lexpro-backend/storage/
 backups/
 
 # OS and temporary files

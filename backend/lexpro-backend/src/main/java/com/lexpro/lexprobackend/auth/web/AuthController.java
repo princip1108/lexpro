@@ -1,11 +1,13 @@
 package com.lexpro.lexprobackend.auth.web;
 
 import com.lexpro.lexprobackend.auth.service.AuthService;
+import com.lexpro.lexprobackend.auth.service.LoginRateLimiter;
 import com.lexpro.lexprobackend.auth.web.dto.CurrentUserResponse;
 import com.lexpro.lexprobackend.auth.web.dto.LoginRequest;
 import com.lexpro.lexprobackend.auth.web.dto.LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
@@ -22,17 +24,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginRateLimiter loginRateLimiter;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter) {
         this.authService = authService;
+        this.loginRateLimiter = loginRateLimiter;
     }
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate and issue an access token")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        loginRateLimiter.acquire(request.username(), httpRequest.getRemoteAddr());
+        LoginResponse response = authService.login(request);
+        loginRateLimiter.recordSuccess(request.username());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
-                .body(authService.login(request));
+                .body(response);
     }
 
     @GetMapping("/me")

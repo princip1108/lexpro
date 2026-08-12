@@ -20,10 +20,10 @@ lexpro/
 
 ## Current status
 
-- Frontend: real authentication and route protection are connected; later business screens still use mock JSON where noted.
+- Frontend: authentication, route protection, dashboard, case workflow, workspace, organization/users, dossier parsing, intelligent-result history, summaries, reports and typical-case recommendations use the real backend APIs. AI generation, report generation and new retrieval runs still require their documented runtime switches and services.
 - Database: V1 + V2 + V3 complete, with 32 business tables in the `lexpro` schema.
-- Backend: M0-M2 are complete, including JWT authentication, user administration, organization/RBAC queries, standard errors, OpenAPI, request correlation and audit logging.
-- Case workflows, dossier storage, AI processing, reports, and recommendation APIs are not implemented yet.
+- Backend: M0-M7 and the initial M8 read-only MCP Server are implemented, including typical-case hybrid retrieval and a JWT-protected `/mcp` endpoint.
+- Still deferred: case status transitions, raw identity-number handling, production MinIO, PDF/Office parsing, named MCP-client acceptance and any MCP mutation. External case-data transfer remains disabled pending explicit approval.
 
 ## Documentation
 
@@ -33,5 +33,12 @@ lexpro/
 - [Business rules](docs/BUSINESS_RULES.md)
 - [Database baseline](docs/DATABASE_BASELINE.md)
 - [Technical decisions](docs/DECISIONS.md)
+- [AI retrieval and MCP architecture](docs/AI_RETRIEVAL_AND_MCP_ARCHITECTURE.md)
 - [Backend setup](backend/README.md)
+- [Local paths and configuration](docs/LOCAL_PATHS_AND_CONFIGURATION.md)
 - [M2 security review](docs/M2_SECURITY_REVIEW.md)
+- [M3 case workflow](docs/M3_CASE_WORKFLOW.md)
+- [M4 dossier management](docs/M4_DOSSIER_MANAGEMENT.md)
+- [M5 document processing](docs/M5_DOCUMENT_PROCESSING.md)
+- [M6 case cards and reports](docs/M6_CASE_CARDS_AND_REPORTS.md)
+- [Manual actions and acceptance](docs/MANUAL_ACTIONS.md)

@@ -35,6 +35,11 @@ class FlywayMigrationResourcesTests {
                     "db/migration/V3__add_workspace_and_rbac.sql",
                     "4EA487AD7B847C54AEC5C6033DBDA7DCC2BFC684D6BA8ED7436E8B40CC3E56D9",
                     6
+            ),
+            new ExpectedMigration(
+                    "db/migration/V4__configure_typical_case_vectors.sql",
+                    "5EF3BE0307A89F4093361C32EC0432520C7E3EB2985943347BAA79F91A61CD15",
+                    0
             )
     );
 

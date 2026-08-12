@@ -41,7 +41,6 @@ public class AuthService {
         this.dummyPasswordHash = passwordService.encode("DummyCredential1!NotAnAccount");
     }
 
-    @Transactional
     public LoginResponse login(LoginRequest request) {
         String username = request.username().trim();
         Optional<UserAccount> optionalAccount = appUserService.findAccountForAuthentication(username);

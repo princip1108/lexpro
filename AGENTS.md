@@ -7,9 +7,10 @@ This file is the project-level source of instructions for AI-assisted developmen
 ## Read before changing code
 
 1. Read `docs/IMPLEMENTATION_PLAN.md` and the documentation for the affected module.
-2. Inspect the actual frontend code and final V1/V2/V3 SQL before assuming fields or behavior.
-3. Check the working tree and preserve user changes.
-4. State the scope, affected files, and verification plan before editing.
+2. For local tools, database executables or environment setup, read `docs/LOCAL_PATHS_AND_CONFIGURATION.md` before searching the machine.
+3. Inspect the actual frontend code and final V1/V2/V3 SQL before assuming fields or behavior.
+4. Check the working tree and preserve user changes.
+5. State the scope, affected files, and verification plan before editing.
 
 ## Source-of-truth order
 
@@ -63,14 +64,24 @@ When sources conflict, stop and document the conflict instead of silently choosi
 - Each user currently has one primary organization and one system role.
 - Treat case files and personal identity data as sensitive.
 
+## Delivery discipline
+
+- Keep every change narrowly scoped to the approved requirement. Do not add speculative abstractions, features, infrastructure, or cleanup work.
+- Strictly minimize new tests. Add only the smallest set needed to protect changed business behavior, authorization boundaries, database/API contracts, or a credible regression risk.
+- Prefer extending an existing test over creating a new test class. Do not duplicate the same behavior across controller, service, and mapper tests unless each layer has a distinct failure risk.
+- Do not add tests for trivial DTO accessors, simple delegation, framework/library behavior, or implementation details that are already covered by a higher-value behavior test.
+- Documentation is not a default deliverable for routine code changes. Update an existing authoritative document only when a plan state, business rule, technical decision, API contract, environment variable, or manual action actually changes.
+- Create a new document only when it is necessary for handoff, operation, or acceptance and no existing document is an appropriate home. Keep one concise handoff document per substantial module and do not repeat content already owned by core documents or OpenAPI.
+- Do not produce milestone summaries, implementation diaries, duplicate architecture notes, or test reports unless the user explicitly requests them.
+
 ## Verification required for every task
 
-- Run focused tests for the changed behavior and the full Maven test suite when practical.
+- Run the smallest focused test set that proves the changed behavior. Run the full Maven suite only when the change has broad/shared impact, before milestone acceptance, or when explicitly requested.
 - Build the backend after backend changes and build the frontend after frontend changes.
 - For database-facing behavior, verify against a test database or use read-only checks against development data.
 - For APIs, verify the real HTTP status and response body.
 - Check that sensitive fields are absent from responses.
-- Update `docs/IMPLEMENTATION_PLAN.md` when a planned item changes state.
+- Update `docs/IMPLEMENTATION_PLAN.md` only when a planned item changes state.
 - When a core English document changes, update its matching `docs/zh-CN` document in the same task.
 - Report what was verified and any remaining manual step or risk.
 

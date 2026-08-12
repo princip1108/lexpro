@@ -22,7 +22,8 @@ export async function request(path, options = {}) {
   headers.set('Accept', 'application/json')
   headers.set('X-Request-Id', crypto.randomUUID())
 
-  if (options.body !== undefined) {
+  const isFormData = options.body instanceof FormData
+  if (options.body !== undefined && !isFormData) {
     headers.set('Content-Type', 'application/json')
   }
   if (options.auth !== false) {
@@ -36,7 +37,7 @@ export async function request(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : (isFormData ? options.body : JSON.stringify(options.body)),
       signal: controller.signal,
       credentials: 'omit'
     })
@@ -49,7 +50,11 @@ export async function request(path, options = {}) {
       }
       throw new ApiError(problem?.detail || '请求失败', response.status, problem)
     }
-    return response.status === 204 ? null : readBody(response)
+    if (response.status === 204) return null
+    if (options.responseType === 'blob') {
+      return { blob: await response.blob(), fileName: responseFileName(response) }
+    }
+    return readBody(response)
   } catch (error) {
     if (error instanceof ApiError) {
       throw error
@@ -61,6 +66,14 @@ export async function request(path, options = {}) {
   } finally {
     window.clearTimeout(timeoutId)
   }
+}
+
+function responseFileName(response) {
+  const disposition = response.headers.get('content-disposition') || ''
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1]
+  try { return decodeURIComponent(encoded || plain || '') }
+  catch { return plain || '' }
 }
 
 async function readBody(response) {

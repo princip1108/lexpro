@@ -20,13 +20,13 @@ const routes = [
     path: '/',
     component: AppLayout,
     children: [
-      { path: 'dashboard', component: Dashboard, meta: { title: '首页工作台' } },
-      { path: 'review-report', component: ReviewReport, meta: { title: '审查报告生成' } },
-      { path: 'todo-cases', component: TodoCases, meta: { title: '待办案件' } },
-      { path: 'legal-elements', component: LegalElements, meta: { title: '法律要素识别' } },
-      { path: 'document-entities', component: DocumentEntities, meta: { title: '文书实体识别' } },
-      { path: 'summary', component: Summary, meta: { title: '案例摘要生成' } },
-      { path: 'case-recommend', component: CaseRecommend, meta: { title: '典型案例推送' } },
+      { path: 'dashboard', component: Dashboard, meta: { title: '首页工作台', permission: 'DASHBOARD_VIEW' } },
+      { path: 'review-report', component: ReviewReport, meta: { title: '审查报告', permission: 'CASE_READ' } },
+      { path: 'todo-cases', component: TodoCases, meta: { title: '待办案件', permission: 'CASE_READ' } },
+      { path: 'legal-elements', component: LegalElements, meta: { title: '法律要素识别', permission: 'CASE_READ' } },
+      { path: 'document-entities', component: DocumentEntities, meta: { title: '文书实体识别', permission: 'CASE_READ' } },
+      { path: 'summary', component: Summary, meta: { title: '案件摘要', permission: 'CASE_READ' } },
+      { path: 'case-recommend', component: CaseRecommend, meta: { title: '典型案例推荐', permission: 'RECOMMENDATION_USE' } },
       {
         path: 'organization',
         component: Organization,
@@ -35,9 +35,13 @@ const routes = [
       {
         path: 'content-management',
         component: ContentManagement,
-        meta: { title: '内容管理', permission: 'CONTENT_MANAGE' }
+        meta: { title: '知识内容' }
       },
-      { path: 'pending-tasks', component: PendingTasks, meta: { title: '待办任务' } }
+      {
+        path: 'pending-tasks',
+        component: PendingTasks,
+        meta: { title: '待办任务', permission: 'TASK_MANAGE' }
+      }
     ]
   }
 ]

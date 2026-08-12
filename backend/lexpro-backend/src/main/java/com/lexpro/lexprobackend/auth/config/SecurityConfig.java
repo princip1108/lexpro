@@ -6,6 +6,7 @@ import com.lexpro.lexprobackend.user.domain.UserAccount;
 import com.lexpro.lexprobackend.user.service.AppUserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -38,6 +39,7 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
+    @Order(2)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             SecurityProblemWriter problemWriter,

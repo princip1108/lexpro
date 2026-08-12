@@ -1,9 +1,11 @@
 package com.lexpro.lexprobackend.auth.web;
 
 import com.lexpro.lexprobackend.auth.service.AuthService;
+import com.lexpro.lexprobackend.auth.service.LoginRateLimiter;
 import com.lexpro.lexprobackend.auth.web.dto.CurrentUserResponse;
 import com.lexpro.lexprobackend.auth.web.dto.LoginRequest;
 import com.lexpro.lexprobackend.auth.web.dto.LoginResponse;
+import com.lexpro.lexprobackend.common.error.RateLimitException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,6 +18,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -31,6 +35,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private LoginRateLimiter loginRateLimiter;
 
     @Test
     void shouldReturnNoStoreLoginResponseWithoutPassword() throws Exception {
@@ -72,5 +79,29 @@ class AuthControllerTests {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"));
+    }
+
+    @Test
+    void shouldRejectControlCharactersInUsername() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"user\\u0000name\",\"password\":\"StrongPass1!\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.fieldErrors.username").exists());
+    }
+
+    @Test
+    void shouldReturnRetryAfterWhenLoginIsRateLimited() throws Exception {
+        doThrow(new RateLimitException(60)).when(loginRateLimiter).acquire(anyString(), anyString());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"admin","password":"StrongPass1!"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "60"))
+                .andExpect(jsonPath("$.errorCode").value("LOGIN_RATE_LIMITED"));
     }
 }

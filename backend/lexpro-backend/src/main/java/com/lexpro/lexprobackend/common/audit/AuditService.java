@@ -31,6 +31,16 @@ public class AuditService {
         operationLogMapper.insert(event, serializeDetail(event), currentRequestId());
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordIndependent(AuditEvent event, String requestId) {
+        operationLogMapper.insert(event, serializeDetail(event), requestId);
+    }
+
+    @Transactional
+    public void record(AuditEvent event, String requestId) {
+        operationLogMapper.insert(event, serializeDetail(event), requestId);
+    }
+
     private String serializeDetail(AuditEvent event) {
         try {
             return objectMapper.writeValueAsString(event.detail());

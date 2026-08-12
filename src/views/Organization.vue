@@ -1,131 +1,31 @@
 <template>
-  <div class="page">
-    <div class="page-title-row">
-      <h2 class="page-title">组织管理</h2>
-      <div class="toolbar">
-        <el-button :icon="User">人员同步</el-button>
-        <el-button type="primary" :icon="Plus">新增部门</el-button>
-      </div>
-    </div>
-
-    <div class="stat-grid">
-      <SectionCard v-for="item in data.stats" :key="item.label">
-        <div class="org-stat">
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-          <p>{{ item.desc }}</p>
-        </div>
-      </SectionCard>
-    </div>
-
+  <div class="page organization-page" v-loading="loading">
+    <div class="page-title-row"><h2 class="page-title">组织与用户</h2><div class="toolbar"><el-button type="primary" :icon="Plus" @click="openCreate">创建用户</el-button><el-button :icon="Refresh" circle title="刷新" @click="load" /></div></div>
+    <div class="stat-grid"><SectionCard><div class="stat"><span>组织单元</span><strong>{{ flatOrganizations.length }}</strong></div></SectionCard><SectionCard><div class="stat"><span>系统用户</span><strong>{{ users.length }}</strong></div></SectionCard><SectionCard><div class="stat"><span>启用用户</span><strong>{{ enabledUsers }}</strong></div></SectionCard><SectionCard><div class="stat"><span>角色</span><strong>{{ roles.length }}</strong></div></SectionCard></div>
     <div class="org-layout">
-      <SectionCard title="部门架构">
-        <div class="dept-grid">
-          <div v-for="item in data.departments" :key="item.name" class="dept-card">
-            <div class="dept-head">
-              <strong>{{ item.name }}</strong>
-              <el-tag size="small">{{ item.leader }}</el-tag>
-            </div>
-            <p>{{ item.focus }}</p>
-            <div class="dept-meta">
-              <span>{{ item.people }} 人</span>
-              <span>{{ item.cases }} 件在办</span>
-            </div>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="人员状态">
-        <el-table :data="data.members" stripe>
-          <el-table-column prop="name" label="姓名" width="90" />
-          <el-table-column prop="department" label="部门" min-width="150" />
-          <el-table-column prop="role" label="角色" min-width="130" />
-          <el-table-column prop="status" label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag :type="row.status === '在线' ? 'success' : 'info'">{{ row.status }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="负载" width="150">
-            <template #default="{ row }">
-              <el-progress :percentage="row.workload" :stroke-width="8" />
-            </template>
-          </el-table-column>
-        </el-table>
-      </SectionCard>
+      <SectionCard title="组织树"><el-tree :data="organizations" node-key="organizationId" :props="{label:'name',children:'children'}" default-expand-all><template #default="{data}"><span class="tree-node"><strong>{{ data.name }}</strong><el-tag size="small" :type="data.status==='ACTIVE'?'success':'info'">{{ data.type }}</el-tag></span></template></el-tree></SectionCard>
+      <SectionCard title="用户目录"><el-table :data="users" stripe><el-table-column prop="realName" label="姓名" min-width="110"/><el-table-column prop="username" label="用户名" min-width="120"/><el-table-column label="组织" min-width="150"><template #default="{row}">{{ organizationName(row.organizationId) }}</template></el-table-column><el-table-column label="角色" min-width="130"><template #default="{row}">{{ roleName(row.roleId) }}</template></el-table-column><el-table-column label="状态" width="90"><template #default="{row}"><el-tag :type="row.status==='ACTIVE'?'success':'info'">{{ row.status==='ACTIVE'?'启用':'停用' }}</el-tag></template></el-table-column><el-table-column label="操作" width="150" fixed="right"><template #default="{row}"><el-button type="primary" link @click="toggleStatus(row)">{{ row.status==='ACTIVE'?'停用':'启用' }}</el-button><el-button type="primary" link @click="openReset(row)">重置密码</el-button></template></el-table-column></el-table></SectionCard>
     </div>
+    <el-dialog v-model="createVisible" title="创建用户" width="540px"><el-form label-width="90px"><el-form-item label="用户名" required><el-input v-model="form.username" maxlength="100" /></el-form-item><el-form-item label="姓名" required><el-input v-model="form.realName" maxlength="100" /></el-form-item><el-form-item label="初始密码" required><el-input v-model="form.password" type="password" show-password maxlength="72" /></el-form-item><el-form-item label="组织" required><el-select v-model="form.organizationId" style="width:100%"><el-option v-for="item in flatOrganizations" :key="item.organizationId" :value="item.organizationId" :label="item.name" /></el-select></el-form-item><el-form-item label="角色" required><el-select v-model="form.roleId" style="width:100%"><el-option v-for="item in roles" :key="item.roleId" :value="item.roleId" :label="item.name" /></el-select></el-form-item></el-form><el-alert title="密码至少 12 位，须包含大小写字母、数字和特殊字符。" type="info" show-icon :closable="false"/><template #footer><el-button @click="createVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitCreate">创建</el-button></template></el-dialog>
+    <el-dialog v-model="resetVisible" title="重置密码" width="460px"><el-input v-model="newPassword" type="password" show-password maxlength="72" placeholder="输入新密码"/><template #footer><el-button @click="resetVisible=false">取消</el-button><el-button type="primary" :loading="saving" @click="submitReset">确认重置</el-button></template></el-dialog>
   </div>
 </template>
-
 <script setup>
-import { Plus, User } from '@element-plus/icons-vue'
+import { computed, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import SectionCard from '../components/common/SectionCard.vue'
-import data from '../mock/organization.json'
+import { createUser, listOrganizations, listRoles, listUsers, resetUserPassword, updateUserStatus } from '../api/admin'
+const organizations=ref([]);const users=ref([]);const roles=ref([]);const loading=ref(false)
+const createVisible=ref(false);const resetVisible=ref(false);const saving=ref(false);const selectedUser=ref(null);const newPassword=ref('');const form=ref({username:'',realName:'',password:'',organizationId:null,roleId:null})
+const flatOrganizations=computed(()=>flatten(organizations.value));const enabledUsers=computed(()=>users.value.filter((u)=>u.status==='ACTIVE').length)
+onMounted(load)
+async function load(){loading.value=true;try{const [orgs,userPage,roleList]=await Promise.all([listOrganizations(),listUsers(),listRoles()]);organizations.value=orgs;users.value=userPage.items;roles.value=roleList}catch(error){ElMessage.error(error.message)}finally{loading.value=false}}
+function flatten(items){return items.flatMap((item)=>[item,...flatten(item.children||[])])}function organizationName(id){return flatOrganizations.value.find((i)=>i.organizationId===id)?.name||'-'}function roleName(id){return roles.value.find((i)=>i.roleId===id)?.name||'-'}
+function openCreate(){form.value={username:'',realName:'',password:'',organizationId:flatOrganizations.value[0]?.organizationId||null,roleId:roles.value[0]?.roleId||null};createVisible.value=true}
+async function submitCreate(){saving.value=true;try{await createUser(form.value);ElMessage.success('用户已创建');createVisible.value=false;await load()}catch(error){ElMessage.error(error.message)}finally{saving.value=false}}
+async function toggleStatus(row){try{await updateUserStatus(row.userId,row.status==='ACTIVE'?'DISABLED':'ACTIVE');ElMessage.success('用户状态已更新');await load()}catch(error){ElMessage.error(error.message)}}
+function openReset(row){selectedUser.value=row;newPassword.value='';resetVisible.value=true}
+async function submitReset(){saving.value=true;try{await resetUserPassword(selectedUser.value.userId,newPassword.value);ElMessage.success('密码已重置');resetVisible.value=false}catch(error){ElMessage.error(error.message)}finally{saving.value=false}}
 </script>
-
-<style scoped>
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.org-stat {
-  display: grid;
-  gap: 8px;
-}
-
-.org-stat span,
-.org-stat p {
-  color: #64748b;
-}
-
-.org-stat strong {
-  color: var(--primary-deep);
-  font-size: 30px;
-}
-
-.org-stat p {
-  margin: 0;
-  font-size: 13px;
-}
-
-.org-layout {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 16px;
-  align-items: start;
-}
-
-.dept-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.dept-card {
-  padding: 16px;
-  background: #f7f9fd;
-  border: 1px solid #edf1f7;
-  border-radius: 6px;
-}
-
-.dept-head,
-.dept-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.dept-card p {
-  min-height: 44px;
-  margin: 12px 0;
-  color: #64748b;
-  line-height: 1.6;
-}
-
-.dept-meta {
-  color: #3f5268;
-  font-size: 13px;
-}
-</style>
+<style scoped>.organization-page{display:grid;gap:16px}.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.stat{display:grid;gap:8px}.stat span{color:#64748b}.stat strong{font-size:30px;color:var(--primary-deep)}.org-layout{display:grid;grid-template-columns:minmax(300px,.7fr) minmax(600px,1.3fr);gap:16px;align-items:start}.tree-node{display:flex;align-items:center;gap:10px;width:100%}@media(max-width:1000px){.stat-grid{grid-template-columns:repeat(2,1fr)}.org-layout{grid-template-columns:1fr}}</style>

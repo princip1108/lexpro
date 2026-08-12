@@ -25,25 +25,33 @@
           <span>案件管理</span>
         </template>
         <el-menu-item index="/todo-cases">待办案件</el-menu-item>
-        <el-menu-item index="/review-report">审查报告生成</el-menu-item>
+        <el-menu-item v-if="hasPermission('CASE_READ')" index="/review-report">审查报告</el-menu-item>
       </el-sub-menu>
-      <el-menu-item index="/legal-elements">
+      <el-menu-item v-if="hasPermission('CASE_READ')" index="/legal-elements">
         <el-icon><Aim /></el-icon>
         <span>法律要素识别</span>
       </el-menu-item>
-      <el-menu-item index="/document-entities">
+      <el-menu-item v-if="hasPermission('CASE_READ')" index="/document-entities">
         <el-icon><Tickets /></el-icon>
         <span>文书实体识别</span>
       </el-menu-item>
-      <el-menu-item index="/summary">
+      <el-menu-item v-if="hasPermission('CASE_READ')" index="/summary">
         <el-icon><Document /></el-icon>
         <span>案例摘要生成</span>
       </el-menu-item>
-      <el-menu-item index="/case-recommend">
+      <el-menu-item v-if="hasPermission('RECOMMENDATION_USE')" index="/case-recommend">
         <el-icon><CollectionTag /></el-icon>
         <span>典型案例推送</span>
       </el-menu-item>
-      <el-sub-menu index="user-manage">
+      <el-menu-item index="/content-management">
+        <el-icon><Reading /></el-icon>
+        <span>知识内容</span>
+      </el-menu-item>
+      <el-menu-item v-if="hasPermission('TASK_MANAGE')" index="/pending-tasks">
+        <el-icon><List /></el-icon>
+        <span>待办任务</span>
+      </el-menu-item>
+      <el-sub-menu v-if="hasPermission('USER_MANAGE')" index="user-manage">
         <template #title>
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -70,10 +78,13 @@ import {
   Document,
   FolderOpened,
   House,
+  List,
+  Reading,
   Setting,
   Tickets,
   User
 } from '@element-plus/icons-vue'
+import { hasPermission } from '../../auth/session'
 
 const route = useRoute()
 const activePath = computed(() => route.path)

@@ -2,7 +2,7 @@
 
 [中文版](zh-CN/IMPLEMENTATION_PLAN.md)
 
-> Updated: 2026-07-29
+> Updated: 2026-08-07
 > Delivery method: small AI-assisted vertical slices, each independently tested and accepted.
 
 ## Current baseline
@@ -56,47 +56,74 @@
 
 ## M3 - Case workflow
 
-- [ ] Case paging/filtering, create, detail and update.
+- [x] Case paging/filtering, create, detail and update.
 - [ ] Explicit case status-transition rules.
-- [ ] Parties and sensitive identity-data handling.
-- [ ] Assignee, reviewer and collaborator assignment history.
-- [ ] Case-level authorization, deadline/overdue calculation and audit.
-- [ ] Replace todo-case and initial dashboard mocks.
+  - Blocked until the transition matrix and authorized transition roles are confirmed.
+- [x] Parties and safe sensitive identity-data handling.
+  - Raw identity-number input, encryption, hashing and exact search remain blocked until the identity policy is confirmed.
+- [x] Assignee, reviewer and collaborator assignment history.
+- [x] Case-level authorization, deadline/overdue calculation and audit.
+- [x] Replace todo-case and initial dashboard mocks.
 
 ## M4 - Dossier management
 
-- [ ] Storage abstraction and development local storage.
-- [ ] Secure upload, hash, metadata, list and download.
-- [ ] Folder tree, tags, soft deletion and case authorization.
+- [x] Storage abstraction and development local storage.
+- [x] Secure upload, hash, metadata, list and download.
+- [x] Folder tree, tags, soft deletion and case authorization.
 - [ ] MinIO adapter only after storage requirements are confirmed.
 
 ## M5 - Document and intelligent processing
 
-- [ ] Parsing contract, async execution, retry and versioned parse results.
-- [ ] Entity recognition with original/final results and confirmation.
-- [ ] Legal-element recognition with evidence traceability.
-- [ ] Versioned case summaries and confirmation.
+- [x] Parsing contract, async execution, retry and versioned parse results.
+  - Local development parsing currently supports UTF-8 text files; PDF/Office adapters remain provider-dependent.
+- [x] Entity recognition with original/final results and confirmation.
+  - OpenAI-compatible DeepSeek calls are asynchronous, audited and blocked unless external data export is explicitly enabled.
+- [x] Legal-element recognition with evidence traceability.
+  - Model output and first-write human confirmation require exact source quotes; optional offsets are validated against the parsed text.
+- [x] Versioned case summaries and confirmation.
+  - `FACT`, `PROCESS`, `CONCLUSION` and `FULL` summaries use explicit same-case parse sources; the current version changes only after successful generation.
 
 ## M6 - Case cards and reports
 
-- [ ] Case-card generation, typed sources, fields and confirmation.
-- [ ] Report templates, generation, editing, review and finalization.
-- [ ] Evidence/legal-element/typical-case references.
-- [ ] Word/PDF export.
+- [x] Case-card generation, typed sources, fields and confirmation.
+- [x] Report templates, generation, editing, review and finalization.
+  - [x] Versioned template creation/query, asynchronous report generation and optimistic draft editing.
+  - [x] Approved template activation and report review/return/finalization transitions with audit.
+- [x] Evidence/legal-element/typical-case references.
+- [x] Editable Word and paginated PDF export using one generic judicial-document layout.
 
 ## M7 - Typical-case recommendation
 
-- [ ] Typical-case import and structured/full-text filtering.
-- [ ] Approve embedding model, dimension and distance algorithm.
-- [ ] Add vector migration and HNSW index.
-- [ ] Hybrid retrieval, ranking, reasons, history and favorites.
+- [x] Define the Java-to-Python internal retrieval contract and failure semantics.
+- [x] Typical-case import, normalization, structured filtering and full-text recall.
+- [x] Approve local `BAAI/bge-m3`, 1024 dimensions and cosine distance.
+- [x] Add the forward-only V4 vector migration and cosine HNSW index.
+- [x] Implement vector recall, RRF fusion, reranking and recommendation reasons in Python.
+- [x] Enforce case authorization in Java, invoke Python, and persist recommendation history/favorites and audit events in Java.
+- [x] Add configurable timeout, one bounded retry, lexical degradation, traceability and focused retrieval-quality tests.
 
-## M8 - Workspace and delivery
+## M8 - MCP integration
 
-- [ ] Knowledge content and human work tasks.
-- [ ] Dashboard/statistics APIs.
-- [ ] Remove remaining in-scope frontend mocks.
+- [ ] Confirm the named MCP client(s) and complete real-client acceptance.
+  - [x] Keep in-process Java, stateless Streamable HTTP at `/mcp` and Spring Boot as the trust boundary.
+- [x] Replace the current web-user JWT dependency with dedicated external MCP service-token authentication and per-client audit identity.
+- [x] Replace the legacy six-tool catalog with legal-element recognition, entity recognition, case summarization and a non-operational typical-case placeholder.
+- [x] Reuse the three validated DeepSeek-compatible clients with strict input/output schemas and no raw prompt/provider response exposure.
+- [x] Add bounded per-client concurrency/rate limits, token rotation/revocation, deployment-safe timeouts and focused security tests.
+- [ ] Deploy behind HTTPS and complete protocol, authorization, isolation and real-client acceptance from an external project.
+
+## M9 - Workspace and delivery
+
+- [x] Knowledge content and human work tasks.
+  - Knowledge and task status-transition commands remain blocked until their transition matrices are approved.
+- [x] Dashboard/statistics APIs.
+- [x] Remove remaining in-scope frontend mocks.
 - [ ] Security, performance, backup/restore and deployment validation.
+  - [x] M9 access-boundary review, focused service tests, backend package and frontend production build.
+  - [x] Administrator core flow, M9 workspace, non-destructive M4 flow and local M5 parsing accepted against the real development database.
+  - [x] Multi-user role and case-level assignment grant/revoke accepted with a fictitious user against the real development database.
+  - [x] Local HTTP smoke baseline: 40 sequential and 60 concurrent protected reads all returned 200; local p95 was 110.01 ms.
+  - [ ] Destructive lifecycle checks, positive external-AI flows, production-scale performance, backup/restore rehearsal and deployment validation.
 
 ## Definition of done for one task
 

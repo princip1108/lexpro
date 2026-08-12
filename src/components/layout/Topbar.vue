@@ -14,14 +14,18 @@
         组织管理
       </router-link>
       <router-link
-        v-if="hasPermission('CONTENT_MANAGE')"
         to="/content-management"
         class="top-link"
         :class="{ active: route.path === '/content-management' }"
       >
-        内容管理
+        知识内容
       </router-link>
-      <router-link to="/pending-tasks" class="top-link danger-dot" :class="{ active: route.path === '/pending-tasks' }">
+      <router-link
+        v-if="hasPermission('TASK_MANAGE')"
+        to="/pending-tasks"
+        class="top-link danger-dot"
+        :class="{ active: route.path === '/pending-tasks' }"
+      >
         待办任务({{ pendingCount }})
       </router-link>
     </div>
@@ -56,18 +60,27 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Fold, Monitor, Search } from '@element-plus/icons-vue'
 import { logout } from '../../api/auth'
+import { getDashboard } from '../../api/workspace'
 import { clearSession, currentUser, hasPermission } from '../../auth/session'
-import todoCases from '../../mock/todoCases.json'
 
 const route = useRoute()
 const router = useRouter()
 const keyword = ref('')
 const loggingOut = ref(false)
-const pendingCount = todoCases.filter((item) => item.status !== '已完成').length
+const pendingCount = ref(0)
+
+onMounted(async () => {
+  if (!hasPermission('TASK_MANAGE') || !hasPermission('DASHBOARD_VIEW')) return
+  try {
+    pendingCount.value = (await getDashboard()).tasks.active
+  } catch {
+    pendingCount.value = 0
+  }
+})
 
 const handleLogout = async () => {
   if (loggingOut.value) return

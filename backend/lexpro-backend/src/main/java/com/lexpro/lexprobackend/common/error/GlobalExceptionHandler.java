@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -31,6 +34,21 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(RateLimitException.class)
+    ResponseEntity<ProblemDetail> handleRateLimit(
+            RateLimitException exception,
+            HttpServletRequest request
+    ) {
+        ResponseEntity<ProblemDetail> response = problem(
+                exception.getStatus(), exception.getTitle(), exception.getErrorCode(), exception.getMessage(),
+                request, null
+        );
+        return ResponseEntity.status(exception.getStatus())
+                .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(exception.getRetryAfterSeconds()))
+                .body(response.getBody());
+    }
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ProblemDetail> handleApiException(
@@ -115,6 +133,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
             MethodArgumentTypeMismatchException.class
     })
     ResponseEntity<ProblemDetail> handleInvalidParameter(Exception exception, HttpServletRequest request) {
@@ -123,6 +142,21 @@ public class GlobalExceptionHandler {
                 "Invalid request parameter",
                 "INVALID_PARAMETER",
                 "One or more request parameters are missing or invalid",
+                request,
+                null
+        );
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ProblemDetail> handleUploadTooLarge(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
+    ) {
+        return problem(
+                HttpStatus.PAYLOAD_TOO_LARGE,
+                "File too large",
+                "DOSSIER_FILE_TOO_LARGE",
+                "The file exceeds the configured upload limit",
                 request,
                 null
         );
