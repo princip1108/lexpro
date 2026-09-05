@@ -44,7 +44,8 @@ public class EntityRecognitionWorker {
         }
         Instant started = Instant.now();
         try {
-            EntityRecognitionOutput output = client.recognize(source.rawText(), event.requestId());
+            EntityRecognitionOutput output = client.recognize(
+                    source.rawText(), source.parsedTextJson(), event.requestId());
             completionService.succeed(event, output, elapsedMillis(started));
         } catch (AiClientException exception) {
             log.warn("entity_recognition_failed docId={} requestId={} errorCode={} category={}", event.docId(),

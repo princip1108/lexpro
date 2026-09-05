@@ -1,156 +1,62 @@
 <template>
-  <el-aside width="216px" class="sidebar">
-    <div class="brand">
-      <div class="brand-mark">L</div>
-      <div>
-        <strong>LexPro</strong>
-        <span>检察业务融合应用</span>
-      </div>
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="t1">法律大模型与检察业务融合应用系统</div>
+      <div class="t2">检察业务智能辅助平台</div>
     </div>
-    <el-menu
-      :default-active="activePath"
-      router
-      class="side-menu"
-      background-color="#2f72f6"
-      text-color="#dfeaff"
-      active-text-color="#ffffff"
-    >
-      <el-menu-item index="/dashboard">
-        <el-icon><House /></el-icon>
-        <span>首页</span>
-      </el-menu-item>
-      <el-sub-menu index="case-manage">
-        <template #title>
-          <el-icon><FolderOpened /></el-icon>
-          <span>案件管理</span>
-        </template>
-        <el-menu-item index="/todo-cases">待办案件</el-menu-item>
-        <el-menu-item v-if="hasPermission('CASE_READ')" index="/review-report">审查报告</el-menu-item>
-      </el-sub-menu>
-      <el-menu-item v-if="hasPermission('CASE_READ')" index="/legal-elements">
-        <el-icon><Aim /></el-icon>
-        <span>法律要素识别</span>
-      </el-menu-item>
-      <el-menu-item v-if="hasPermission('CASE_READ')" index="/document-entities">
-        <el-icon><Tickets /></el-icon>
-        <span>文书实体识别</span>
-      </el-menu-item>
-      <el-menu-item v-if="hasPermission('CASE_READ')" index="/summary">
-        <el-icon><Document /></el-icon>
-        <span>案例摘要生成</span>
-      </el-menu-item>
-      <el-menu-item v-if="hasPermission('RECOMMENDATION_USE')" index="/case-recommend">
-        <el-icon><CollectionTag /></el-icon>
-        <span>典型案例推送</span>
-      </el-menu-item>
-      <el-menu-item index="/content-management">
-        <el-icon><Reading /></el-icon>
-        <span>知识内容</span>
-      </el-menu-item>
-      <el-menu-item v-if="hasPermission('TASK_MANAGE')" index="/pending-tasks">
-        <el-icon><List /></el-icon>
-        <span>待办任务</span>
-      </el-menu-item>
-      <el-sub-menu v-if="hasPermission('USER_MANAGE')" index="user-manage">
-        <template #title>
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </template>
-        <el-menu-item index="/dashboard">用户列表</el-menu-item>
-      </el-sub-menu>
-      <el-sub-menu index="system-manage">
-        <template #title>
-          <el-icon><Setting /></el-icon>
-          <span>系统管理</span>
-        </template>
-        <el-menu-item index="/dashboard">运行监控</el-menu-item>
-      </el-sub-menu>
-    </el-menu>
-  </el-aside>
+    <nav class="side-nav">
+      <router-link class="nav-item" to="/dashboard"><LegalIcon name="dash" /><span>工作台</span></router-link>
+
+      <div class="grp">案件管理</div>
+      <router-link class="nav-item" to="/todo-cases"><LegalIcon name="case" /><span>案件管理</span></router-link>
+      <router-link v-if="hasPermission('RECOMMENDATION_USE')" class="nav-item" :to="{ path: '/case-recommend', query: { view: 'library' } }"><LegalIcon name="book" /><span>典型案例库</span></router-link>
+
+      <div class="grp">核心功能</div>
+      <router-link v-if="hasPermission('CASE_READ')" class="nav-item" to="/document-entities"><LegalIcon name="entity" /><span>询问讯问笔录实体识别</span></router-link>
+      <router-link v-if="hasPermission('CASE_READ')" class="nav-item" to="/legal-elements"><LegalIcon name="elem" /><span>法律要素识别</span></router-link>
+      <router-link v-if="hasPermission('CASE_READ')" class="nav-item" to="/summary"><LegalIcon name="summary" /><span>案例摘要生成</span></router-link>
+      <router-link v-if="hasPermission('RECOMMENDATION_USE')" class="nav-item" :to="{ path: '/case-recommend', query: { view: 'recommend' } }"><LegalIcon name="push" /><span>典型案例推送</span></router-link>
+
+      <div class="grp">业务融合</div>
+      <router-link v-if="hasPermission('CASE_READ')" class="nav-item" to="/case-cards"><LegalIcon name="card" /><span>案卡回填</span></router-link>
+      <router-link v-if="hasPermission('CASE_READ')" class="nav-item" to="/review-report"><LegalIcon name="report" /><span>审查报告</span></router-link>
+
+      <div class="grp">系统</div>
+      <router-link class="nav-item" to="/model-config"><LegalIcon name="model" /><span>模型配置</span></router-link>
+
+      <template v-if="hasPermission('USER_MANAGE')">
+        <div class="grp">系统管理</div>
+        <router-link class="nav-item" to="/users"><LegalIcon name="user" /><span>用户管理</span></router-link>
+        <router-link class="nav-item" to="/operation-logs"><LegalIcon name="log" /><span>操作日志</span></router-link>
+      </template>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar">{{ avatar }}</div>
+      <div class="identity"><div class="uname">{{ currentUser?.realName || currentUser?.username }}</div><div class="urole">{{ currentUser?.role?.name || '工作账号' }}</div></div>
+      <button class="btn ghost sm" type="button" :disabled="loggingOut" @click="handleLogout">退出</button>
+    </div>
+  </aside>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import {
-  Aim,
-  CollectionTag,
-  Document,
-  FolderOpened,
-  House,
-  List,
-  Reading,
-  Setting,
-  Tickets,
-  User
-} from '@element-plus/icons-vue'
-import { hasPermission } from '../../auth/session'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import LegalIcon from '../common/LegalIcon.vue'
+import { logout } from '../../api/auth'
+import { clearSession, currentUser, hasPermission } from '../../auth/session'
 
-const route = useRoute()
-const activePath = computed(() => route.path)
+const router = useRouter()
+const loggingOut = ref(false)
+const avatar = computed(() => (currentUser.value?.realName || currentUser.value?.username || '检').slice(0, 1))
+
+async function handleLogout() {
+  if (loggingOut.value) return
+  loggingOut.value = true
+  try { await logout() } catch { /* local logout remains authoritative */ }
+  finally { clearSession(); loggingOut.value = false; await router.replace('/') }
+}
 </script>
 
 <style scoped>
-.sidebar {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #2f72f6 0%, #2362e4 100%);
-  box-shadow: 4px 0 18px rgba(29, 85, 190, 0.16);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 66px;
-  padding: 0 18px;
-  color: #fff;
-}
-
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  font-weight: 800;
-  color: #2f72f6;
-  background: #fff;
-  border-radius: 6px;
-  place-items: center;
-}
-
-.brand strong,
-.brand span {
-  display: block;
-}
-
-.brand strong {
-  font-size: 18px;
-  line-height: 1.2;
-}
-
-.brand span {
-  margin-top: 3px;
-  font-size: 12px;
-  color: #dfeaff;
-}
-
-.side-menu {
-  border-right: 0;
-}
-
-.side-menu :deep(.el-menu-item),
-.side-menu :deep(.el-sub-menu__title) {
-  height: 48px;
-  font-size: 15px;
-}
-
-.side-menu :deep(.el-menu-item.is-active) {
-  background: rgba(255, 255, 255, 0.16);
-  border-left: 4px solid #fff;
-}
-
-.side-menu :deep(.el-sub-menu .el-menu-item) {
-  min-width: 0;
-  padding-left: 52px !important;
-  background: #2868ea;
-}
+.sidebar{height:100vh;min-height:0;position:sticky;top:0}.side-nav{min-height:0;overscroll-behavior:contain}.identity{min-width:0;flex:1}.sidebar-user .btn{margin-left:auto;color:#d3ddec;background:transparent;border-color:rgba(255,255,255,.25)}.sidebar-user .btn:hover{color:#fff;background:rgba(255,255,255,.09)}
 </style>

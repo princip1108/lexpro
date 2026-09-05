@@ -25,7 +25,7 @@ class EntityRecognitionWorkerTests {
         EntityRecognitionRequestedEvent event = event();
         when(mapper.selectSource(9L, 12L)).thenReturn(source());
         EntityRecognitionOutput output = output();
-        when(client.recognize("source text", "job-1")).thenReturn(output);
+        when(client.recognize("source text", null, "job-1")).thenReturn(output);
         EntityRecognitionWorker worker = new EntityRecognitionWorker(mapper, client,
                 new AiProcessingProperties(), completion);
 
@@ -40,7 +40,7 @@ class EntityRecognitionWorkerTests {
         EntityRecognitionClient client = mock(EntityRecognitionClient.class);
         EntityRecognitionCompletionService completion = mock(EntityRecognitionCompletionService.class);
         when(mapper.selectSource(9L, 12L)).thenReturn(source());
-        when(client.recognize("source text", "job-1"))
+        when(client.recognize("source text", null, "job-1"))
                 .thenThrow(new AiClientException("AI_PROVIDER_UNAVAILABLE", "timeout"));
         EntityRecognitionWorker worker = new EntityRecognitionWorker(mapper, client,
                 new AiProcessingProperties(), completion);
@@ -55,7 +55,7 @@ class EntityRecognitionWorkerTests {
     }
 
     private EntityRecognitionSource source() {
-        return new EntityRecognitionSource(12L, 9L, 5L, "SUCCESS", "source text");
+        return new EntityRecognitionSource(12L, 9L, 5L, "SUCCESS", "source text", null);
     }
 
     private EntityRecognitionOutput output() throws Exception {

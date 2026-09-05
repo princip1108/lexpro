@@ -17,14 +17,27 @@ public class AiProcessingProperties {
     private Duration readTimeout = Duration.ofSeconds(60);
     private int maxInputChars = 60_000;
     private int maxOutputTokens = 4_096;
+    private boolean enableThinking;
+    private volatile Endpoint runtimeEndpoint;
 
-    public boolean isEnabled() { return enabled; }
+    public record Endpoint(boolean enabled, URI baseUrl, String apiKey, String model, boolean enableThinking) {
+        @Override public String toString() { return "AI endpoint [redacted]"; }
+    }
+    public Endpoint endpoint() {
+        Endpoint current=runtimeEndpoint;
+        return current==null?new Endpoint(enabled,baseUrl,apiKey,model,enableThinking):current;
+    }
+    public void setRuntimeEndpoint(Endpoint endpoint) { runtimeEndpoint=endpoint; }
+    public boolean isEnableThinking() { return endpoint().enableThinking(); }
+    public void setEnableThinking(boolean enableThinking) { this.enableThinking=enableThinking; }
+
+    public boolean isEnabled() { return endpoint().enabled(); }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public URI getBaseUrl() { return baseUrl; }
+    public URI getBaseUrl() { return endpoint().baseUrl(); }
     public void setBaseUrl(URI baseUrl) { this.baseUrl = baseUrl; }
-    public String getApiKey() { return apiKey; }
+    public String getApiKey() { return endpoint().apiKey(); }
     public void setApiKey(String apiKey) { this.apiKey = apiKey; }
-    public String getModel() { return model; }
+    public String getModel() { return endpoint().model(); }
     public void setModel(String model) { this.model = model; }
     public boolean isAllowExternalCaseData() { return allowExternalCaseData; }
     public void setAllowExternalCaseData(boolean allowExternalCaseData) {

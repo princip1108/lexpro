@@ -1,369 +1,73 @@
 <template>
-  <div class="login-page">
-    <div class="visual-side">
-      <div class="line-dot dot-a"></div>
-      <div class="line-dot dot-b"></div>
-      <div class="tech-stage">
-        <div class="screen">
-          <div class="chart-line"></div>
-          <div class="panel-lines">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-        </div>
-        <div class="platform"></div>
-        <div class="cube cube-a"></div>
-        <div class="cube cube-b"></div>
-        <div class="glow-card"></div>
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-head"><div class="big">⚖️</div><h2>法律大模型与检察业务融合应用系统</h2><p>请使用工作账号登录</p></div>
+      <div class="login-body">
+        <form autocomplete="off" @submit.prevent="submitLogin">
+          <div class="field"><label>账号</label><input v-model="form.username" type="text" maxlength="100" placeholder="请输入账号" autocomplete="username"></div>
+          <div class="field"><label>密码</label><input v-model="form.password" type="password" maxlength="72" placeholder="请输入密码" autocomplete="current-password"></div>
+          <div class="field"><label>验证码</label><div class="captcha-row"><input v-model="form.captcha" type="text" placeholder="请输入验证码" maxlength="4"><button class="captcha-img" type="button" title="点击刷新" aria-label="刷新验证码" :disabled="captchaLoading" @click="refreshCaptcha"><img v-if="captchaSvg" :src="captchaSvg" alt="验证码"><span v-else>{{ captchaLoading ? '加载中…' : '点击刷新' }}</span></button></div></div>
+          <button type="submit" class="btn primary lg btn-block" :disabled="submitting"><span v-if="submitting" class="spin"></span>{{ submitting ? '登录中…' : '登 录' }}</button>
+          <div class="login-tip">系统不开放注册，请使用管理员分配的工作账号。</div>
+          <div v-if="demoAccounts.length" class="login-tip demo-accounts"><b>演示账号（仅用于本地验收）</b><div v-for="account in demoAccounts" :key="account.username"><button type="button" @click="form.username=account.username;form.password=account.password">{{ account.name }}</button>：{{ account.username }} / {{ account.password }}</div></div>
+        </form>
       </div>
     </div>
-    <el-card class="login-card" shadow="never">
-      <div class="login-title">
-        <h1>LexPro</h1>
-        <p>法律大模型与检察业务融合应用系统</p>
-      </div>
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        class="login-form"
-        @submit.prevent="submitLogin"
-      >
-        <el-form-item prop="username">
-          <el-input
-            v-model="form.username"
-            size="large"
-            placeholder="请输入账号"
-            :prefix-icon="User"
-            autocomplete="username"
-          />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input
-            v-model="form.password"
-            size="large"
-            type="password"
-            show-password
-            placeholder="请输入登录密码"
-            :prefix-icon="Lock"
-            autocomplete="current-password"
-            @keyup.enter="submitLogin"
-          />
-        </el-form-item>
-        <div class="form-options">
-          <el-checkbox v-model="form.remember">保持登录状态</el-checkbox>
-          <span class="password-help">请联系管理员重置密码</span>
-        </div>
-        <el-button
-          native-type="submit"
-          type="primary"
-          size="large"
-          class="login-button"
-          :loading="submitting"
-        >
-          登录
-        </el-button>
-      </el-form>
-    </el-card>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Lock, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { login } from '../api/auth'
+import { login, getCaptcha } from '../api/auth'
 import { saveSession } from '../auth/session'
 
 const route = useRoute()
 const router = useRouter()
-const formRef = ref()
 const submitting = ref(false)
-const form = reactive({
-  username: '',
-  password: '',
-  remember: false
-})
-const rules = {
-  username: [
-    { required: true, message: '请输入账号', trigger: 'blur' },
-    { max: 100, message: '账号不能超过 100 个字符', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入登录密码', trigger: 'blur' },
-    { max: 72, message: '密码不能超过 72 个字符', trigger: 'blur' }
-  ]
+const captchaId = ref('')
+const captchaSvg = ref('')
+const captchaLoading = ref(false)
+const form = reactive({ username: '', password: '', captcha: '' })
+// Public local demonstration credentials, eliminated from production builds.
+const demoAccounts = import.meta.env.DEV ? [
+  {name:'管理员',username:'demo_admin',password:'LexProDemo2026!'},
+  {name:'检察官',username:'demo_prosecutor',password:'LexProDemo2026!'},
+  {name:'审查人员',username:'demo_reviewer',password:'LexProDemo2026!'},
+] : []
+
+async function refreshCaptcha() {
+  if (captchaLoading.value) return
+  captchaLoading.value = true
+  captchaId.value = ''; captchaSvg.value = ''; form.captcha = ''
+  try {
+    const challenge = await getCaptcha()
+    captchaId.value = challenge.captchaId
+    captchaSvg.value = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(challenge.svg)
+  } catch (error) { ElMessage.error(error.message || '验证码加载失败') }
+  finally { captchaLoading.value = false }
 }
+onMounted(refreshCaptcha)
 
-const submitLogin = async () => {
+async function submitLogin() {
   if (submitting.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
-
+  if (!form.username.trim()) return ElMessage.error('请输入账号')
+  if (!form.password) return ElMessage.error('请输入密码')
+  if (!form.captcha.trim() || !captchaId.value) return ElMessage.error('请输入验证码')
   submitting.value = true
   try {
-    const response = await login({
-      username: form.username.trim(),
-      password: form.password
-    })
-    saveSession(response, form.remember)
+    const response = await login({ username: form.username.trim(), password: form.password, captchaId: captchaId.value, captcha: form.captcha.trim() })
+    saveSession(response, false)
     form.password = ''
-    const redirect = typeof route.query.redirect === 'string'
-      && route.query.redirect.startsWith('/')
-      && !route.query.redirect.startsWith('//')
-      ? route.query.redirect
-      : '/dashboard'
+    const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/') && !route.query.redirect.startsWith('//') ? route.query.redirect : '/dashboard'
     await router.replace(redirect)
-  } catch (error) {
-    ElMessage.error(error.message || '登录失败')
-  } finally {
-    submitting.value = false
-  }
+  } catch (error) { ElMessage.error(error.message || '登录失败'); refreshCaptcha() }
+  finally { submitting.value = false }
 }
 </script>
 
 <style scoped>
-.login-page {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(560px, 1fr) 520px;
-  align-items: center;
-  min-height: 100vh;
-  padding: 64px 11vw;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 10% 92%, rgba(63, 196, 255, 0.34), transparent 15%),
-    linear-gradient(135deg, #228aff 0%, #4255f4 58%, #5b34ec 100%);
-}
-
-.login-page::before,
-.login-page::after {
-  position: absolute;
-  width: 190px;
-  height: 380px;
-  background: rgba(255, 255, 255, 0.1);
-  clip-path: polygon(50% 0, 100% 14%, 100% 100%, 0 86%, 0 14%);
-  content: "";
-}
-
-.login-page::before {
-  right: 20%;
-  top: 4%;
-}
-
-.login-page::after {
-  right: 3%;
-  bottom: 8%;
-  width: 88px;
-  height: 260px;
-}
-
-.visual-side {
-  position: relative;
-  height: 520px;
-}
-
-.line-dot {
-  position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-}
-
-.dot-a {
-  top: 26px;
-  left: 16px;
-  width: 78px;
-  height: 78px;
-  box-shadow: 0 0 0 14px rgba(255, 255, 255, 0.08);
-}
-
-.dot-b {
-  right: 90px;
-  top: 90px;
-  width: 54px;
-  height: 54px;
-}
-
-.dot-a::after,
-.dot-b::after {
-  position: absolute;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.42);
-  transform-origin: left;
-  content: "";
-}
-
-.dot-a::after {
-  left: 58px;
-  top: 52px;
-  width: 190px;
-  transform: rotate(38deg);
-}
-
-.dot-b::after {
-  left: 40px;
-  top: 18px;
-  width: 120px;
-  transform: rotate(-36deg);
-}
-
-.tech-stage {
-  position: absolute;
-  left: 70px;
-  top: 118px;
-  width: 500px;
-  height: 330px;
-  transform: skewY(-8deg);
-}
-
-.platform {
-  position: absolute;
-  left: 90px;
-  top: 150px;
-  width: 310px;
-  height: 150px;
-  background: linear-gradient(135deg, rgba(21, 93, 233, 0.84), rgba(16, 194, 255, 0.32));
-  border: 1px solid rgba(114, 222, 255, 0.42);
-  box-shadow: 0 30px 60px rgba(9, 44, 140, 0.28);
-  transform: rotateX(58deg) rotateZ(-35deg);
-}
-
-.screen {
-  position: absolute;
-  left: 135px;
-  top: 24px;
-  z-index: 2;
-  width: 180px;
-  height: 126px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 8px solid rgba(44, 117, 255, 0.72);
-  border-radius: 8px;
-  box-shadow: 0 20px 40px rgba(4, 42, 136, 0.3);
-}
-
-.chart-line {
-  position: absolute;
-  left: 22px;
-  top: 40px;
-  width: 78px;
-  height: 38px;
-  border-bottom: 3px solid #72d7ff;
-  border-left: 3px solid #72d7ff;
-}
-
-.chart-line::after {
-  position: absolute;
-  left: 12px;
-  top: -4px;
-  width: 92px;
-  height: 34px;
-  border-top: 4px solid #5a7dff;
-  transform: skewY(-16deg);
-  content: "";
-}
-
-.panel-lines {
-  position: absolute;
-  right: 18px;
-  top: 30px;
-  display: grid;
-  gap: 10px;
-  width: 42px;
-}
-
-.panel-lines span {
-  height: 6px;
-  background: #ff5c6c;
-  border-radius: 4px;
-}
-
-.panel-lines span:nth-child(2) {
-  background: #2f72f6;
-}
-
-.panel-lines span:nth-child(3) {
-  background: #ffa940;
-}
-
-.cube,
-.glow-card {
-  position: absolute;
-  background: rgba(47, 223, 255, 0.75);
-  border: 1px solid rgba(152, 240, 255, 0.6);
-  box-shadow: 0 0 30px rgba(25, 219, 255, 0.3);
-}
-
-.cube-a {
-  left: 70px;
-  bottom: 62px;
-  width: 42px;
-  height: 42px;
-}
-
-.cube-b {
-  left: 410px;
-  bottom: 88px;
-  width: 54px;
-  height: 54px;
-}
-
-.glow-card {
-  left: 300px;
-  top: 168px;
-  width: 150px;
-  height: 76px;
-  background: rgba(47, 223, 255, 0.36);
-  border-radius: 8px;
-}
-
-.login-card {
-  position: relative;
-  z-index: 1;
-  width: 430px;
-  padding: 30px 38px 34px;
-  border: 0;
-  border-radius: 28px;
-  justify-self: end;
-}
-
-.login-title {
-  margin: 8px 0 40px;
-}
-
-.login-title h1 {
-  margin: 0;
-  font-size: 30px;
-  line-height: 1.2;
-}
-
-.login-title p {
-  margin: 8px 0 0;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.login-form :deep(.el-input__wrapper) {
-  border-radius: 0;
-  box-shadow: 0 1px 0 #c8d0dc;
-}
-
-.form-options {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: -2px 0 24px;
-}
-
-.password-help {
-  color: #7a8797;
-  font-size: 13px;
-}
-
-.login-button {
-  width: 100%;
-  height: 44px;
-  font-size: 16px;
-}
+.captcha-img{padding:0;flex-shrink:0}.captcha-img img{width:100%;height:100%;display:block}.btn-block{width:100%;justify-content:center}
+.demo-accounts{text-align:left;line-height:1.9;overflow-wrap:anywhere}.demo-accounts button{border:0;background:none;padding:0;color:var(--blue);cursor:pointer;font:inherit}
 </style>

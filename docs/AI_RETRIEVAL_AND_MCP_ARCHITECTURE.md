@@ -71,9 +71,11 @@ The approved replacement tool catalog is:
 - `lexpro_recognize_legal_elements`
 - `lexpro_recognize_entities`
 - `lexpro_summarize_case`
-- `lexpro_push_typical_cases` (reserved placeholder; always returns `TYPICAL_CASE_PUSH_NOT_IMPLEMENTED`)
+- `lexpro_push_typical_cases` (read-only partner typical-case recommendation; no recommendation history is written)
 
-No MCP resources, prompts, generic database access, filesystem access or mutating tools are exposed. The first three tools call the existing validated DeepSeek-compatible clients. The typical-case tool performs no network or database access until its separate implementation is approved.
+No MCP resources, prompts, generic database access, filesystem access or mutating tools are exposed. The first three tools call the existing validated DeepSeek-compatible clients. The typical-case tool accepts a supplied fact snapshot and bounded partner filters, then reuses the Java partner recommendation client for its analyze/search pipeline. It returns allowlisted ranked case metadata and short content excerpts, while omitting provider analysis IDs, retrieval IDs, internal table names and full case content. It does not write `case_recommendation` history because MCP service tokens do not impersonate a web user or bypass case-level authorization.
+
+The typical-case MCP tool is available only when the deployment explicitly enables retrieval, selects `PARTNER` as the provider, and permits partner case-data transfer. It returns a stable unavailable/disabled error when those prerequisites are not met. The original tool name is retained for client compatibility; its behavior is now recommendation rather than mutation or push.
 
 Real case text is approved for transfer to DeepSeek through the first three tools when the deployment explicitly sets `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA=true`. This approval does not relax client authorization, least-data, audit, response-bounding or log-redaction controls, and it does not apply to any other external provider.
 

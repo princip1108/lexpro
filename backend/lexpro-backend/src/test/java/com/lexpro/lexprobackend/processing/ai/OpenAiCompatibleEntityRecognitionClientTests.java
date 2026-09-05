@@ -31,10 +31,11 @@ class OpenAiCompatibleEntityRecognitionClientTests {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         AiProcessingProperties properties = properties();
+        properties.setEnableThinking(true);
         String providerResponse = new ObjectMapper().writeValueAsString(Map.of(
                 "model", "deepseek-v4-flash",
                 "choices", List.of(Map.of("message", Map.of("content",
-                        "{\"entities\":[{\"type\":\"PERSON\",\"text\":\"Zhang\",\"confidence\":0.9}]}"))),
+                        "{\"entities\":[{\"type\":\"SUSPECT\",\"text\":\"Zhang\",\"confidence\":0.9}]}"))),
                 "usage", Map.of("prompt_tokens", 12, "completion_tokens", 8, "total_tokens", 20)));
         OpenAiCompatibleStructuredAiClient client = new OpenAiCompatibleStructuredAiClient(
                 builder.build(), properties, new ObjectMapper());
@@ -42,6 +43,7 @@ class OpenAiCompatibleEntityRecognitionClientTests {
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(header("Authorization", "Bearer test-key"))
                 .andExpect(header("X-Request-Id", "job-123"))
+                .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath("$.chat_template_kwargs.enable_thinking").value(true))
                 .andRespond(withSuccess(providerResponse, MediaType.APPLICATION_JSON));
 
         StructuredAiOutput output = client.generate("Extract entities", "Zhang submitted the filing.", "job-123");
@@ -58,7 +60,7 @@ class OpenAiCompatibleEntityRecognitionClientTests {
         ObjectMapper objectMapper = new ObjectMapper();
         when(structuredClient.generate(anyString(), eq("source"), eq("job-123"))).thenReturn(
                 new StructuredAiOutput(objectMapper.readTree(
-                        "{\"entities\":[{\"type\":\"PERSON\",\"text\":\"hallucinated\"}]}"),
+                        "{\"entities\":[{\"type\":\"SUSPECT\",\"text\":\"hallucinated\"}]}"),
                         "deepseek-v4-flash", objectMapper.createObjectNode(), null));
         OpenAiCompatibleEntityRecognitionClient client = new OpenAiCompatibleEntityRecognitionClient(
                 structuredClient);
@@ -100,14 +102,14 @@ class OpenAiCompatibleEntityRecognitionClientTests {
         ObjectMapper objectMapper = new ObjectMapper();
         when(structuredClient.generate(anyString(), eq("原告张三提交材料。"), eq("job-normalize")))
                 .thenReturn(new StructuredAiOutput(objectMapper.readTree("""
-                        {"entities":[{"type":" person ","text":" 张三 ","confidence":"0.95"}]}
+                        {"entities":[{"type":" suspect ","text":" 张三 ","confidence":"0.95"}]}
                         """), "deepseek-chat", objectMapper.createObjectNode(), null));
         OpenAiCompatibleEntityRecognitionClient client = new OpenAiCompatibleEntityRecognitionClient(
                 structuredClient);
 
         EntityRecognitionOutput output = client.recognize("原告张三提交材料。", "job-normalize");
 
-        assertEquals("PERSON", output.entities().at("/entities/0/type").textValue());
+        assertEquals("SUSPECT", output.entities().at("/entities/0/type").textValue());
         assertEquals("张三", output.entities().at("/entities/0/text").textValue());
         assertEquals(0.95, output.entities().at("/entities/0/confidence").doubleValue());
         assertEquals(2, output.entities().at("/entities/0/startOffset").intValue());
@@ -119,7 +121,7 @@ class OpenAiCompatibleEntityRecognitionClientTests {
         ObjectMapper objectMapper = new ObjectMapper();
         when(structuredClient.generate(anyString(), eq("原告张三向法院提交材料，张三请求还款。"), eq("job-123")))
                 .thenReturn(new StructuredAiOutput(objectMapper.readTree("""
-                        {"entities":[{"type":"PERSON","text":"张三","startOffset":99,"endOffset":101,
+                        {"entities":[{"type":"SUSPECT","text":"张三","startOffset":99,"endOffset":101,
                         "confidence":0.95}]}
                         """), "deepseek-chat", objectMapper.createObjectNode(), null));
         OpenAiCompatibleEntityRecognitionClient client = new OpenAiCompatibleEntityRecognitionClient(
@@ -138,8 +140,8 @@ class OpenAiCompatibleEntityRecognitionClientTests {
         when(structuredClient.generate(anyString(), eq("张三提交材料，李四签收。"), eq("job-123")))
                 .thenReturn(new StructuredAiOutput(objectMapper.readTree("""
                         {"entities":[
-                          {"type":"PERSON","text":"张三","confidence":0.98},
-                          {"type":"PERSON","text":"李四","confidence":0.97}
+                          {"type":"SUSPECT","text":"张三","confidence":0.98},
+                          {"type":"SUSPECT","text":"李四","confidence":0.97}
                         ]}
                         """), "deepseek-chat", objectMapper.createObjectNode(), null));
         OpenAiCompatibleEntityRecognitionClient client = new OpenAiCompatibleEntityRecognitionClient(

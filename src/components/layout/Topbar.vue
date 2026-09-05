@@ -1,182 +1,24 @@
 <template>
-  <el-header class="topbar">
-    <div class="nav-tabs">
-      <span class="top-icon"><el-icon><Fold /></el-icon></span>
-      <router-link to="/dashboard" class="top-link" :class="{ active: route.path === '/dashboard' }">
-        个人中心
-      </router-link>
-      <router-link
-        v-if="hasPermission('USER_MANAGE')"
-        to="/organization"
-        class="top-link"
-        :class="{ active: route.path === '/organization' }"
-      >
-        组织管理
-      </router-link>
-      <router-link
-        to="/content-management"
-        class="top-link"
-        :class="{ active: route.path === '/content-management' }"
-      >
-        知识内容
-      </router-link>
-      <router-link
-        v-if="hasPermission('TASK_MANAGE')"
-        to="/pending-tasks"
-        class="top-link danger-dot"
-        :class="{ active: route.path === '/pending-tasks' }"
-      >
-        待办任务({{ pendingCount }})
-      </router-link>
-    </div>
-    <div class="top-actions">
-      <span class="run-status">
-        <el-icon><Monitor /></el-icon>
-        系统运行管理
-      </span>
-      <el-input
-        v-model="keyword"
-        class="quick-search"
-        placeholder="快速检索内容"
-        :prefix-icon="Search"
-        clearable
-      />
-      <el-dropdown>
-        <span class="user">
-          {{ currentUser?.realName || currentUser?.username }}
-          <el-icon><ArrowDown /></el-icon>
-        </span>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item disabled>{{ currentUser?.role?.name }}</el-dropdown-item>
-            <el-dropdown-item divided :disabled="loggingOut" @click="handleLogout">
-              退出登录
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-    </div>
-  </el-header>
+  <header class="topbar">
+    <div class="crumb">{{ crumb }}</div>
+    <div class="right"><div class="model-switch">
+      <button class="model-chip" :class="{open}" type="button" title="点击查看生效模型" @click.stop="toggle"><span class="dot"></span><span>{{ config.activeMode || '规则引擎(离线)' }}</span><span class="caret">▾</span></button>
+      <div v-if="open" class="model-menu" @click.stop><div class="mm-head">切换生效大模型</div><div class="mm-list">
+        <div v-for="item in enabledItems" :key="item.id" class="mm-item" :class="{'mm-on':item.active}" :title="`${item.displayName} · ${item.modelName}`"><span class="mm-name">{{ item.displayName || item.modelName }}</span><span v-if="item.active" class="mm-tag">生效</span><span v-else class="mm-sub">{{ item.modelName }}</span></div>
+        <div v-for="item in disabledItems" :key="item.id" class="mm-item mm-disabled" title="已停用,可在模型配置页启用"><span class="mm-name">{{ item.displayName || item.modelName }}</span><span class="mm-tag">停用</span></div>
+        <div v-if="!(config.items || []).length" class="mm-empty">暂无已启用的大模型<br>请在「模型配置」页添加并启用</div>
+      </div><div class="mm-foot">模型不可用时系统自动回退内置规则引擎,业务不中断</div></div>
+    </div></div>
+  </header>
 </template>
-
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, Fold, Monitor, Search } from '@element-plus/icons-vue'
-import { logout } from '../../api/auth'
-import { getDashboard } from '../../api/workspace'
-import { clearSession, currentUser, hasPermission } from '../../auth/session'
-
-const route = useRoute()
-const router = useRouter()
-const keyword = ref('')
-const loggingOut = ref(false)
-const pendingCount = ref(0)
-
-onMounted(async () => {
-  if (!hasPermission('TASK_MANAGE') || !hasPermission('DASHBOARD_VIEW')) return
-  try {
-    pendingCount.value = (await getDashboard()).tasks.active
-  } catch {
-    pendingCount.value = 0
-  }
-})
-
-const handleLogout = async () => {
-  if (loggingOut.value) return
-  loggingOut.value = true
-  try {
-    await logout()
-  } catch {
-    // Local logout must still complete when the backend is unavailable.
-  } finally {
-    clearSession()
-    loggingOut.value = false
-    await router.replace('/login')
-  }
-}
+import { computed,onBeforeUnmount,onMounted,ref } from 'vue'
+import { useRoute } from 'vue-router'
+import { getModelConfiguration } from '../../api/system'
+const route=useRoute(),open=ref(false),config=ref({activeMode:'规则引擎(离线)',items:[]})
+const crumb=computed(()=>route.path==='/case-recommend'&&route.query.view==='library'?'典型案例库':route.meta.title||'工作台')
+const enabledItems=computed(()=>(config.value.items||[]).filter(item=>item.enabled)),disabledItems=computed(()=>(config.value.items||[]).filter(item=>!item.enabled))
+function close(){open.value=false}function toggle(){open.value=!open.value}
+onMounted(async()=>{document.addEventListener('click',close);try{config.value=await getModelConfiguration()}catch{/* dashboard remains available when model status is unavailable */}})
+onBeforeUnmount(()=>document.removeEventListener('click',close))
 </script>
-
-<style scoped>
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 56px;
-  padding: 0 20px;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-}
-
-.nav-tabs,
-.top-actions,
-.run-status,
-.user {
-  display: flex;
-  align-items: center;
-}
-
-.nav-tabs {
-  gap: 22px;
-  height: 100%;
-}
-
-.top-icon {
-  display: inline-flex;
-  color: #2c3e50;
-  font-size: 20px;
-}
-
-.top-link {
-  position: relative;
-  height: 56px;
-  color: #3f5268;
-  font-size: 14px;
-  line-height: 56px;
-}
-
-.top-link.active {
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.top-link.active::after {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: var(--primary);
-  content: "";
-}
-
-.danger-dot::before {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 4px;
-  vertical-align: middle;
-  background: #f04f5f;
-  border-radius: 50%;
-  content: "";
-}
-
-.top-actions {
-  gap: 18px;
-  color: #4e5f73;
-  font-size: 14px;
-}
-
-.run-status {
-  gap: 5px;
-}
-
-.quick-search {
-  width: 260px;
-}
-
-.user {
-  gap: 4px;
-  cursor: pointer;
-}
-</style>

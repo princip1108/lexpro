@@ -71,9 +71,11 @@ MCP 专用安全链现在只接受注册服务令牌，并解析为 `clientId` �
 - `lexpro_recognize_legal_elements`
 - `lexpro_recognize_entities`
 - `lexpro_summarize_case`
-- `lexpro_push_typical_cases`（保留占位，固定返回 `TYPICAL_CASE_PUSH_NOT_IMPLEMENTED`）
+- `lexpro_push_typical_cases`（只读典型案例推荐，不写入推荐历史）
 
-首版不开放 MCP Resource、Prompt、通用数据库访问、文件系统访问或写操作工具。前三个工具调用现有经过校验的 DeepSeek-compatible 客户端；典型案例工具在单独获批实现前不访问网络或数据库。
+首版不开放 MCP Resource、Prompt、通用数据库访问、文件系统访问或写操作工具。前三个工具调用现有经过校验的 DeepSeek-compatible 客户端；典型案例工具接收已获授权的事实快照和有界筛选条件，复用 Java 合作方推荐客户端完成分析和检索，只返回允许字段、排序结果和短正文摘录，不返回 provider 分析 ID、检索 ID、内部表名或完整正文，也不写入 `case_recommendation` 历史。
+
+典型案例 MCP 工具仅在显式启用检索、选择 `PARTNER` Provider 并允许向合作方发送案件数据时可用；未满足条件时返回稳定的禁用或不可用错误。为兼容已经交付的客户端，工具名保留为 `lexpro_push_typical_cases`，其实际行为现在是只读推荐，不执行写入或推送变更。
 
 部署时显式设置 `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA=true` 后，前三个工具已获准将真实案件文本发送给 DeepSeek。该批准不放宽客户端授权、最小数据范围、审计、响应上限和日志脱敏控制，也不适用于其他外部供应商。
 

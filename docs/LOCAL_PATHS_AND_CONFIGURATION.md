@@ -1,11 +1,21 @@
 # LexPro 本机路径与配置索引
 
-> 最后核实：2026-07-30  
+> 最后核实：2026-09-03  
 > 适用机器：当前 Windows 开发机。安装位置变化后必须重新核实，不能凭常见默认路径猜测。
 
 本文只记录开发路径、配置入口和环境变量名，不记录任何真实密码、JWT 密钥或 API Key。
 
 ## 1. 已核实的工具路径
+
+### 2026-09-05 本地验收补充
+
+- `tools/prepare_local_acceptance.py` 默认只读预览；`--apply --backup <已验证dump>` 仅连接本机开发库，补充典型案例元数据和演示账号／案件授权，不覆盖已有记录或密码。依赖现有虚拟环境的 `psycopg` 和 `bcrypt==4.3.0`；演示密码由 `LEXPRO_DEMO_PASSWORD` 读取。
+- 已导入 100 条 SQLite 典型案例样本（本地总数 115），不生成向量。5 个已有演示案件向 `admin` 和三类演示账号授权。独立账号为 `demo_admin`、`demo_prosecutor`、`demo_reviewer`，登录页仅开发模式显示公开演示密码，不能将这些账号用于生产。
+- 模型配置 V7 已于 2026-09-05 经批准通过 Flyway 执行，业务表从 32 变为 33；V1—V6 未重跑。升级前备份为 `backups/before_v7_20260905_153726.dump`，已校验备份目录。
+- 执行 V7 并验证后才设置 `LEXPRO_MODEL_CONFIG_ENABLED=true`。`LEXPRO_MODEL_CONFIG_MASTER_KEY` 必须为随机 32 字节密钥的 Base64，经环境或秘密管理器提供并备份；遗失后无法解密已保存 API Key。`LEXPRO_MODEL_CONFIG_ALLOWED_URLS` 为逗号分隔的完整 base_url 允许列表，默认只允许 `http://127.0.0.1:8001/v1` 和既有部署 AI 地址。不要提交真实密钥。
+- `LEXPRO_AI_ENABLE_THINKING=false` 是环境配置默认值；动态模型配置启用后以生效项为准。既有 `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA` 不会被网页开关绕过。
+- 本地备份：`backups/before_acceptance_20260905.dump`、`backups/before_generic_demo_accounts_20260905.dump`。
+- `tools/start_local_acceptance.ps1 -Port 8080` 复用 IDEA 现有环境，但按最新要求覆盖为统一 LexPro：`LEXPRO_MODEL_CONFIG_ENABLED=false`，生成地址 `http://127.0.0.1:8001/v1`，模型 `LexPro_8B`，无鉴权占位 Key `EMPTY`，输出预算 1536 token、读取超时 180 秒。IDEA 的 `LexproBackendApplication` 程序参数配置同样覆盖原环境值；如 IDEA 未自动读取外部修改，请重新加载运行配置。历史模型配置和主密钥保留，不能删除或重新生成。仅首次启动适配器时添加 `-StartAiAdapter`。脚本不创建 SSH 隧道；运行 JAR 副本与日志位于忽略目录 `.runtime`。不要在 IDEA 和脚本中同时启动 8080。
 
 | 用途 | 当前路径 | 已核实版本/说明 |
 |---|---|---|
@@ -76,6 +86,8 @@ Get-Service -Name 'postgresql-x64-18'
 | 本地卷宗默认目录 | `D:\desktop\soph\lexpro\backend\lexpro-backend\storage` |
 | Python 检索服务 | `D:\desktop\soph\lexpro\backend\retrieval-service` |
 | Python 虚拟环境 | `D:\desktop\soph\lexpro\backend\retrieval-service\.venv` |
+| Python AI 适配服务 | `D:\desktop\soph\lexpro\backend\ai-service` |
+| SQLite 迁移工具 | `D:\desktop\soph\lexpro\tools\migrate_legal_llm.py` |
 | 数据库设计与升级 SQL | `D:\desktop\soph\lexpro\DBM` |
 | 工程文档 | `D:\desktop\soph\lexpro\docs` |
 | 中文工程文档 | `D:\desktop\soph\lexpro\docs\zh-CN` |
@@ -93,6 +105,8 @@ Get-Service -Name 'postgresql-x64-18'
 | 前端命令和依赖 | `package.json` | `dev`、`build`、`preview` |
 | Python 检索配置 | `backend\retrieval-service\app\config.py` | 从进程环境读取 `LEXPRO_RETRIEVAL_*` |
 | Python 依赖 | `backend\retrieval-service\requirements.txt` | 检索服务固定依赖版本 |
+| Python AI 适配配置 | `backend\ai-service\app\config.py` | 从进程环境读取 `LEXPRO_AI_SERVICE_*` |
+| Python AI 适配依赖 | `backend\ai-service\requirements.txt` | MinerU/LexPro 内部适配服务依赖 |
 | AI 开发规则 | `AGENTS.md` | AI 修改项目前必须遵守 |
 | 人工操作清单 | `docs\zh-CN\MANUAL_ACTIONS.md` | 迁移、真实环境和待确认事项 |
 
@@ -122,6 +136,7 @@ Get-Service -Name 'postgresql-x64-18'
 | `LEXPRO_DOSSIER_LOCAL_ROOT` | 默认 `./storage`，相对于后端工作目录 |
 | `LEXPRO_REPORT_PDF_FONT_PATH` | 本机可使用 `C:\Windows\Fonts\simhei.ttf` |
 | `LEXPRO_RETRIEVAL_BASE_URL` | 默认 `http://127.0.0.1:8010` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_BASE_URL` | 默认 `http://127.0.0.1:8000`，只连接本机 SSH 转发端口 |
 
 ### 安全开关
 
@@ -132,7 +147,10 @@ Get-Service -Name 'postgresql-x64-18'
 | `LEXPRO_BOOTSTRAP_ADMIN_ENABLED` | 仅首次创建开发管理员时临时开启 |
 | `LEXPRO_AI_ENABLED` | 是否启用 DeepSeek 适配器 |
 | `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA` | 默认 `false`；已批准向 DeepSeek 外发的部署须显式设为 `true` |
+| `LEXPRO_AI_SERVICE_ENABLED` | 默认 `false`；内部 MinerU/LexPro 服务和密钥配置完成后再开启 |
 | `LEXPRO_RETRIEVAL_ENABLED` | Python 检索服务准备完成后再开启 |
+| `LEXPRO_TYPICAL_CASE_PROVIDER` | 默认 `LOCAL`；合作方模式显式设为 `PARTNER`，不会自动降级 |
+| `LEXPRO_PARTNER_TYPICAL_CASE_ALLOW_CASE_DATA` | 默认 `false`；发送真实案件事实前须另行批准并显式开启 |
 | `LEXPRO_MCP_ENABLED` | 默认 `false`，确定客户端并批准本地验收后再开启 |
 
 ### DeepSeek
@@ -140,6 +158,24 @@ Get-Service -Name 'postgresql-x64-18'
 `LEXPRO_AI_BASE_URL`、`LEXPRO_AI_API_KEY`、`LEXPRO_AI_MODEL`、`LEXPRO_AI_CONNECT_TIMEOUT`、
 `LEXPRO_AI_READ_TIMEOUT`、`LEXPRO_AI_MAX_INPUT_CHARS` 和 `LEXPRO_AI_MAX_OUTPUT_TOKENS` 由
 `application.properties` 统一定义。真实 `LEXPRO_AI_API_KEY` 只放本机环境变量。
+
+### 内部 MinerU/LexPro AI 服务
+
+| 变量 | 当前约定 |
+|---|---|
+| `LEXPRO_AI_SERVICE_ENABLED` | Spring 端默认 `false` |
+| `LEXPRO_AI_SERVICE_BASE_URL` | Spring 端默认 `http://127.0.0.1:8020` |
+| `LEXPRO_AI_SERVICE_INTERNAL_TOKEN` | Java/Python 两端相同，至少 32 个字符，只放环境变量 |
+| `LEXPRO_AI_SERVICE_CONNECT_TIMEOUT` | Spring 端默认 `PT5S` |
+| `LEXPRO_AI_SERVICE_READ_TIMEOUT` | Spring 端默认 `PT15M` |
+| `LEXPRO_AI_SERVICE_MAX_FILE_SIZE` | Spring 端默认 `25MB`；不得大于 Python 端字节上限 |
+| `LEXPRO_AI_SERVICE_MINERU_BASE_URL` | Python 端 MinerU 地址，开发默认 `http://127.0.0.1:13456` |
+| `LEXPRO_AI_SERVICE_MINERU_VERSION` | 写入解析结果的可追溯部署版本 |
+| `LEXPRO_AI_SERVICE_LEXPRO_BASE_URL` | Python 端 LexPro vLLM 地址，开发默认 `http://127.0.0.1:8001` |
+| `LEXPRO_AI_SERVICE_LEXPRO_MODEL_NAME` | vLLM 模型 ID，当前约定 `LexPro_8B` |
+| `LEXPRO_AI_SERVICE_LEXPRO_MODEL_VERSION` | 写入实体结果的可追溯部署版本 |
+
+该服务不自动读取 `.env`，真实密钥和服务器地址只注入启动进程。Spring 开关关闭时不会发送文件。
 
 ### Python 检索服务
 
@@ -152,6 +188,26 @@ Get-Service -Name 'postgresql-x64-18'
 | `LEXPRO_RETRIEVAL_DISTANCE` | `cosine` |
 | `LEXPRO_RETRIEVAL_MAX_CANDIDATES` | 候选上限，默认 `1000` |
 | `LEXPRO_RETRIEVAL_DEFAULT_LIMIT` | 默认结果数，默认 `10` |
+
+### 合作方典型案例服务
+
+| 变量 | 当前约定 |
+|---|---|
+| `LEXPRO_PARTNER_TYPICAL_CASE_BASE_URL` | `http://127.0.0.1:8000`；明文 HTTP 只允许回环地址 |
+| `LEXPRO_PARTNER_TYPICAL_CASE_CONNECT_TIMEOUT` | 默认 `PT3S` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_ANALYZE_TIMEOUT` | 默认 `PT60S` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_SEARCH_TIMEOUT` | 默认 `PT30S` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_MAX_RESULTS` | 默认 `20`，最大 `100` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_ANALYSIS_TTL` | 默认 `PT10M`，最大 `PT1H` |
+| `LEXPRO_PARTNER_TYPICAL_CASE_TOKEN_SECRET` | `PARTNER` 模式必需，至少 32 字节，只放环境变量 |
+
+合作方服务由对方托管。需要调用时，由运维在运行 Spring Boot 的同一台服务器上长期维护以下隧道；Java 只调用本机 `8000` 端口，不创建、重启或监控 SSH 进程：
+
+```powershell
+ssh -L 8000:localhost:8000 zcy@211.87.232.203
+```
+
+隧道建立不代表允许外发真实案件数据；`LEXPRO_PARTNER_TYPICAL_CASE_ALLOW_CASE_DATA` 仍保持默认关闭，开启前须单独批准。
 
 ### MCP Server
 
@@ -209,6 +265,16 @@ $env:LEXPRO_RETRIEVAL_DATABASE_URL = 'postgresql://lexpro_retrieval:<本机密�
 
 `<本机密码>` 只是占位符，不能把真实值写入本文、Git 或聊天记录。
 
+Python AI 服务可在本地开发时复用检索服务虚拟环境；不要在共享环境中强制降级既有依赖：
+
+```powershell
+Set-Location 'D:\desktop\soph\lexpro\backend\ai-service'
+$env:LEXPRO_AI_SERVICE_INTERNAL_TOKEN = '<至少32个字符的本机开发密钥>'
+& '..\retrieval-service\.venv\Scripts\python.exe' -m uvicorn app.main:app --host 127.0.0.1 --port 8020
+```
+
+服务器部署时仍应使用 AI 服务独立虚拟环境，并按其 `requirements.txt` 固定依赖。
+
 ## 7. 本地服务地址
 
 | 服务 | 地址 |
@@ -220,6 +286,8 @@ $env:LEXPRO_RETRIEVAL_DATABASE_URL = 'postgresql://lexpro_retrieval:<本机密�
 | 后端健康检查 | `http://127.0.0.1:8080/api/health` |
 | 数据库健康检查 | `http://127.0.0.1:8080/api/health/database` |
 | Python 检索健康检查 | `http://127.0.0.1:8010/health` |
+| Python AI 服务健康检查 | `http://127.0.0.1:8020/internal/v1/health`（需要内部令牌） |
+| 合作方典型案例隧道 | `http://127.0.0.1:8000`（仅隧道运行时可用） |
 | MCP Server（启用后） | `http://127.0.0.1:8080/mcp` |
 
 ## 8. 后续使用规则

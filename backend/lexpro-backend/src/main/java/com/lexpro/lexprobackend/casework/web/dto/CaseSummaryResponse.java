@@ -15,6 +15,8 @@ public record CaseSummaryResponse(
         LocalDate acceptDate,
         OffsetDateTime deadlineAt,
         boolean overdue,
+        String suspectName,
+        long dossierCount,
         String handlerName,
         OffsetDateTime updatedAt
 ) {

@@ -76,8 +76,11 @@
 
 ## 认证
 
+典型案例库支持可选的 `judgmentDateFrom`、`judgmentDateTo`（ISO 日期，包含边界）。任一端可留空；倒置区间返回 `400 INVALID_DATE_RANGE`。仍兼容原有精确日期参数 `judgmentDate`。
+
 - 受保护接口使用 `Authorization: Bearer <access-token>`。
-- 公开接口仅限健康检查、本地接口文档和登录。
+- 公开接口仅限健康检查、本地接口文档、登录和登录验证码。
+- `GET /api/v1/auth/captcha` 返回 `{captchaId, svg}`，设置 `Cache-Control: no-store`。登录除账号密码外必须提交 `captchaId` 和 `captcha`。四位验证码五分钟过期、不区分大小写，每次校验即消耗；错误返回 `400 CAPTCHA_INVALID`。验证码保存在有容量限制的单进程内存中，重启后失效。
 - 权限和案件可见范围以后端判断为准，前端隐藏按钮不能代替权限控制。
 - Access Token 使用 HS256，默认 30 分钟过期，不提供 Refresh Token。
 - `POST /api/v1/auth/logout` 记录退出操作，客户端必须丢弃 Token；服务端没有 Token 黑名单。
@@ -154,7 +157,7 @@
 | `GET` | `/api/v1/cases/{caseId}/documents/{docId}/entity-results/{entityResultId}` | `CASE_READ` 加案件可见性 | 原始/确认实体及模型来源信息 |
 | `PUT` | `/api/v1/cases/{caseId}/documents/{docId}/entity-results/{entityResultId}/confirmation` | `AI_EXECUTE` 加案件 `EDIT` 访问级别 | 保存第一次人工确认结果，不覆盖模型原始输出 |
 
-启动识别要求解析结果已经成功且包含提取文本。任务异步执行，`requestId` 是服务端生成的 UUID。确认请求必须是包含 `entities` 数组的对象，第一次确认后不可覆盖。AI 服务错误使用稳定错误码，不返回供应商响应正文、凭据或提示词。环境未明确允许外发时返回 `503 AI_DATA_EXPORT_DISABLED`，不会发送文本。
+启动识别要求解析结果已经成功且包含提取文本。任务异步执行，`requestId` 是服务端生成的 UUID。内部 LexPro_8B 路由只接受 `SUSPECT`、`LOCATION`、`ORGANIZATION`、`TIME`、`CRIME` 和 `DRUG`，并通过 `lexpro.entity.v2` 返回准确的块内/全文 UTF-16 偏移。确认请求必须是包含 `entities` 数组的对象，第一次确认后不可覆盖。AI 错误使用稳定错误码，不返回响应正文、凭据、提示词或原文。内部路由关闭时，旧外部通道在未明确允许外发前仍返回 `503 AI_DATA_EXPORT_DISABLED`。
 
 ### M5-S3 接口
 
@@ -218,16 +221,19 @@
 
 | 方法 | 路径 | 权限 | 结果 |
 |---|---|---|---|
-| `POST` | `/api/v1/typical-cases/imports` | `REPORT_MANAGE` + `AI_EXECUTE` | 规范化、向量化并按 `externalCaseId` 幂等导入，单次最多 50 条 |
-| `GET` | `/api/v1/typical-cases` | `RECOMMENDATION_USE` | 分页查询语料，支持关键词、案由/案件类型和仅收藏筛选 |
+| `POST` | `/api/v1/typical-cases/imports` | `REPORT_MANAGE` + `AI_EXECUTE` | 规范化、向量化并按 `externalCaseId` 幂等导入，单次最多 50 条；保留 V6 来源元数据和结构化案例内容 |
+| `GET` | `/api/v1/typical-cases` | `RECOMMENDATION_USE` | 分页查询语料，支持关键词、案由/案件类型、法院、地区、文书类型、来源、案例层级、单个精确 `judgmentDate` 和仅收藏筛选 |
 | `GET` | `/api/v1/typical-cases/{typicalCaseId}` | `RECOMMENDATION_USE` | 返回典型案例元数据和正文，不返回向量 |
 | `PUT` | `/api/v1/typical-cases/{typicalCaseId}/favorite` | `RECOMMENDATION_USE` | `204 No Content`；幂等收藏 |
 | `DELETE` | `/api/v1/typical-cases/{typicalCaseId}/favorite` | `RECOMMENDATION_USE` | `204 No Content`；幂等取消收藏 |
+| `POST` | `/api/v1/cases/{caseId}/recommendation-analyses` | `RECOMMENDATION_USE` + `CASE_READ` 加案件可见性 | `201 Created`；在 `PARTNER` 模式下分析唯一的 `sourceSummaryId` 或 `factText`，返回争议焦点和短期签名 `analysisToken` |
 | `POST` | `/api/v1/cases/{caseId}/recommendations` | `RECOMMENDATION_USE` + `CASE_READ` 加案件可见性 | `201 Created`；执行检索并保存一个推荐批次 |
 | `GET` | `/api/v1/cases/{caseId}/recommendations` | `RECOMMENDATION_USE` + `CASE_READ` 加案件可见性 | 推荐历史 |
 | `GET` | `/api/v1/cases/{caseId}/recommendations/{recommendId}` | `RECOMMENDATION_USE` + `CASE_READ` 加案件可见性 | 查询快照、检索参数和排序结果 |
 
 推荐输入必须在 `sourceSummaryId` 和 `factText` 中恰好提供一个，可包含 `disputeFocus`、结构化筛选和 1 到 50 的结果数量。Java 在调用 Python 前完成案件授权。纯词法降级结果以 `degraded=true` 保存；Python 或数据库服务不可用时返回 `503`，且不创建推荐批次。
+
+`LEXPRO_TYPICAL_CASE_PROVIDER` 在 `LOCAL`（现有 BGE-M3 协议）和 `PARTNER` 之间显式选择，禁止自动降级。在 `PARTNER` 模式下，创建推荐时必须重复使用同一事实来源，并提交签名 `analysisToken` 和可选 `partnerFilters`。Java 校验令牌中的用户、案件、事实哈希和有效期，向合作方显式发送 `analysis_id`，校验完整检索响应后，在一个事务中镜像案例并创建推荐历史。响应使用统一的 camelCase 字段，包括 `caseNumber`、`region`、事实相似度 `score` 和最终排序分 `rankingScore`，不暴露合作方任务 ID、表名或向量。合作方连接、超时或 5xx 返回 `503 TYPICAL_CASE_PROVIDER_UNAVAILABLE`；分析不存在或过期返回 `409 TYPICAL_CASE_ANALYSIS_EXPIRED`；响应不合法返回 `502 TYPICAL_CASE_PROVIDER_RESPONSE_INVALID`。
 
 ### M8 MCP 端点
 
@@ -242,9 +248,9 @@
 | `lexpro_recognize_legal_elements` | `AI_EXECUTE` | 经校验且保留原文证据的法律要素 |
 | `lexpro_recognize_entities` | `AI_EXECUTE` | 经校验的文书实体及可用的原文位置 |
 | `lexpro_summarize_case` | `AI_EXECUTE` | 对显式传入文书文本生成的有界摘要 |
-| `lexpro_push_typical_cases` | 已注册客户端 | 保留占位，固定返回 `TYPICAL_CASE_PUSH_NOT_IMPLEMENTED` |
+| `lexpro_push_typical_cases` | `AI_EXECUTE` | 对调用方提供的案件事实执行只读合作方分析并返回排序后的典型案例推荐 |
 
-当前目录不开放 MCP Resource、Prompt、通用 SQL、Shell、文件系统或不受限 HTTP 能力。前三个工具复用已批准的 DeepSeek 兼容客户端，并继续受案件数据外发开关和输入输出上限控制。
+当前目录不开放 MCP Resource、Prompt、通用 SQL、Shell、文件系统或不受限 HTTP 能力。前三个工具复用已批准的 DeepSeek 兼容客户端，并继续受案件数据外发开关和输入输出上限控制。典型案例工具仅在启用检索、选择 `PARTNER` 并允许向合作方发送案件数据时可用；它只返回有界的候选元数据和正文摘录，不写入推荐历史，也不暴露合作方任务 ID、内部表名或完整案例正文。
 
 ### M9 工作台接口
 
@@ -263,7 +269,13 @@
 
 知识内容必须包含正文或对象/数组 JSON。人工任务必须在 `caseId` 和 `contentId` 中恰好填写一个。知识和任务状态流转矩阵及授权角色批准前，M9 不开放状态命令；公告、日程和通知不在本期范围。
 
-## 接口路径命名
+## 模型 API 配置（V7）
+
+`POST /api/v1/system/model-configurations`、`PUT /{id}`、`POST /{id}/activation`、`DELETE /{id}` 在控制器和服务层均要求 `USER_MANAGE`；后三者相对于 `/api/v1/system/model-configurations`。响应不返回密钥；编辑时留空保留密文。`enableThinking` 传递至模型请求。停用／删除生效项后选择最近更新的已启用项，无可用项则停止生成；这不是调用失败后的自动重试或回退。服务地址允许列表及案件数据传输仍由部署配置控制。
+
+法律要素 `legal-elements-v3` 在原有名称、分析内容、引文结构上增加可选的标量 `value`。新生成结果使用具名的中文布尔、数字、文本要素。旧分析型记录仍可读取和确认；原始 JSON 不修改，确认保存独立草稿，引文继续使用经过校验的 UTF-16 定位。
+
+## 接口路径命名约定
 
 - 使用复数名词：`/cases`、`/users`、`/files`。
 - 父资源决定权限边界时使用嵌套路径：`/cases/{caseId}/parties`。

@@ -111,7 +111,7 @@ class McpEndpointTests {
     }
 
     @Test
-    void shouldExposeTypicalCaseAsANonOperationalTool() throws Exception {
+    void shouldRequireFactsForTypicalCaseRecommendation() throws Exception {
         mockMvc.perform(authenticatedPost("""
                         {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
                           "name":"lexpro_push_typical_cases","arguments":{}
@@ -120,7 +120,7 @@ class McpEndpointTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.isError").value(true))
                 .andExpect(jsonPath("$.result.structuredContent.errorCode")
-                        .value("TYPICAL_CASE_PUSH_NOT_IMPLEMENTED"));
+                        .value("MCP_INPUT_INVALID"));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder authenticatedPost(

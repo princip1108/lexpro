@@ -5,6 +5,7 @@ import com.lexpro.lexprobackend.casework.service.CaseAccessService;
 import com.lexpro.lexprobackend.common.audit.AuditService;
 import com.lexpro.lexprobackend.common.error.ApiException;
 import com.lexpro.lexprobackend.processing.config.AiProcessingProperties;
+import com.lexpro.lexprobackend.processing.config.AiServiceProperties;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionResult;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionSource;
 import com.lexpro.lexprobackend.processing.mapper.EntityRecognitionMapper;
@@ -56,6 +57,21 @@ class EntityRecognitionServiceTests {
     }
 
     @Test
+    void shouldAllowApprovedInternalLexProWithoutExternalExportSwitch() {
+        EntityRecognitionMapper mapper = mock(EntityRecognitionMapper.class);
+        when(mapper.lockSource(9L, 12L)).thenReturn(source());
+        AiServiceProperties aiServiceProperties = new AiServiceProperties();
+        aiServiceProperties.setEnabled(true);
+        EntityRecognitionService service = new EntityRecognitionService(mapper, mock(CaseAccessService.class),
+                new AiProcessingProperties(), aiServiceProperties, mock(ApplicationEventPublisher.class),
+                mock(AuditService.class), objectMapper);
+
+        EntityRecognitionJobResponse response = service.start(7L, 9L, 12L, "http-request-1");
+
+        assertEquals("PROCESSING", response.status());
+    }
+
+    @Test
     void shouldStoreHumanConfirmationSeparately() throws Exception {
         EntityRecognitionMapper mapper = mock(EntityRecognitionMapper.class);
         when(mapper.selectSource(9L, 12L)).thenReturn(source());
@@ -67,7 +83,7 @@ class EntityRecognitionServiceTests {
 
         var response = service.confirm(7L, 9L, 12L, 30L,
                 new ConfirmEntityRecognitionRequest(objectMapper.readTree(
-                        "{\"entities\":[{\"type\":\"PERSON\",\"text\":\"Li\"}]}")));
+                        "{\"entities\":[{\"type\":\"SUSPECT\",\"text\":\"Li\"}]}")));
 
         assertEquals("Li", response.finalEntities().at("/entities/0/text").textValue());
         verify(mapper).confirm(eq(9L), eq(12L), eq(30L), any(String.class), eq(7L));
@@ -76,7 +92,7 @@ class EntityRecognitionServiceTests {
     private EntityRecognitionService service(EntityRecognitionMapper mapper, CaseAccessService accessService,
                                              ApplicationEventPublisher publisher,
                                              AiProcessingProperties properties) {
-        return new EntityRecognitionService(mapper, accessService, properties, publisher,
+        return new EntityRecognitionService(mapper, accessService, properties, new AiServiceProperties(), publisher,
                 mock(AuditService.class), objectMapper);
     }
 
@@ -89,7 +105,7 @@ class EntityRecognitionServiceTests {
     }
 
     private EntityRecognitionSource source() {
-        return new EntityRecognitionSource(12L, 9L, 5L, "SUCCESS", "Li filed a claim.");
+        return new EntityRecognitionSource(12L, 9L, 5L, "SUCCESS", "Li filed a claim.", null);
     }
 
     private EntityRecognitionResult result() {
@@ -98,7 +114,7 @@ class EntityRecognitionServiceTests {
         result.setDocId(12L);
         result.setCaseId(9L);
         result.setEntitiesJson("{\"entities\":[]}");
-        result.setFinalEntitiesJson("{\"entities\":[{\"type\":\"PERSON\",\"text\":\"Li\"}]}");
+        result.setFinalEntitiesJson("{\"entities\":[{\"type\":\"SUSPECT\",\"text\":\"Li\"}]}");
         result.setGenerationParametersJson("{}");
         return result;
     }

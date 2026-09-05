@@ -16,7 +16,8 @@ import java.util.List;
 public interface EntityRecognitionMapper {
 
     @Select("""
-            SELECT doc_id, case_id, dossier_id, parse_status, raw_text
+            SELECT doc_id, case_id, dossier_id, parse_status, raw_text,
+                   parsed_text_json::text AS parsed_text_json
             FROM lexpro.document_parse_result
             WHERE case_id = #{caseId} AND doc_id = #{docId}
             FOR UPDATE
@@ -24,7 +25,8 @@ public interface EntityRecognitionMapper {
     EntityRecognitionSource lockSource(@Param("caseId") long caseId, @Param("docId") long docId);
 
     @Select("""
-            SELECT doc_id, case_id, dossier_id, parse_status, raw_text
+            SELECT doc_id, case_id, dossier_id, parse_status, raw_text,
+                   parsed_text_json::text AS parsed_text_json
             FROM lexpro.document_parse_result
             WHERE case_id = #{caseId} AND doc_id = #{docId}
             """)

@@ -52,8 +52,8 @@ public class CaseCardWorker {
             CaseCardGenerationOutput output = client.generate(sources, event.requestId());
             completionService.succeed(event, sources, output, elapsedMillis(started));
         } catch (AiClientException exception) {
-            log.warn("case_card_failed caseId={} fillTaskId={} errorCode={}", event.caseId(),
-                    event.fillTaskId(), exception.getErrorCode());
+            log.warn("case_card_failed caseId={} fillTaskId={} errorCode={} diagnosticCode={}", event.caseId(),
+                    event.fillTaskId(), exception.getErrorCode(), exception.getDiagnosticCode());
             completionService.fail(event, exception.getErrorCode(), elapsedMillis(started));
         } catch (RuntimeException exception) {
             log.error("case_card_unexpected_failure caseId={} fillTaskId={}", event.caseId(),

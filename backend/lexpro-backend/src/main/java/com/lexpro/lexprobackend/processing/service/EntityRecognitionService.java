@@ -9,6 +9,7 @@ import com.lexpro.lexprobackend.common.audit.AuditResult;
 import com.lexpro.lexprobackend.common.audit.AuditService;
 import com.lexpro.lexprobackend.common.error.ApiException;
 import com.lexpro.lexprobackend.processing.config.AiProcessingProperties;
+import com.lexpro.lexprobackend.processing.config.AiServiceProperties;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionJobRecord;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionResult;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionSource;
@@ -33,21 +34,24 @@ import java.util.UUID;
 public class EntityRecognitionService {
 
     private static final int MAX_CONFIRMED_JSON_LENGTH = 262_144;
-    private static final Set<String> ENTITY_TYPES = Set.of("PERSON", "ORGANIZATION", "LOCATION", "DATE", "TIME",
-            "MONEY", "CASE_NUMBER", "LEGAL_REFERENCE", "OTHER");
+    private static final Set<String> ENTITY_TYPES = Set.of(
+            "SUSPECT", "LOCATION", "ORGANIZATION", "TIME", "CRIME", "DRUG");
     private final EntityRecognitionMapper mapper;
     private final CaseAccessService caseAccessService;
     private final AiProcessingProperties properties;
+    private final AiServiceProperties aiServiceProperties;
     private final ApplicationEventPublisher eventPublisher;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
 
     public EntityRecognitionService(EntityRecognitionMapper mapper, CaseAccessService caseAccessService,
-                                    AiProcessingProperties properties, ApplicationEventPublisher eventPublisher,
+                                    AiProcessingProperties properties, AiServiceProperties aiServiceProperties,
+                                    ApplicationEventPublisher eventPublisher,
                                     AuditService auditService, ObjectMapper objectMapper) {
         this.mapper = mapper;
         this.caseAccessService = caseAccessService;
         this.properties = properties;
+        this.aiServiceProperties = aiServiceProperties;
         this.eventPublisher = eventPublisher;
         this.auditService = auditService;
         this.objectMapper = objectMapper;
@@ -65,7 +69,7 @@ public class EntityRecognitionService {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("docId", docId);
         detail.put("dossierId", source.dossierId());
-        detail.put("model", properties.getModel());
+        detail.put("model", aiServiceProperties.isEnabled() ? "LexPro_8B" : properties.getModel());
         if (httpRequestId != null && !httpRequestId.isBlank()) {
             detail.put("httpRequestId", httpRequestId);
         }
@@ -123,6 +127,9 @@ public class EntityRecognitionService {
     }
 
     private void requireProviderAvailable() {
+        if (aiServiceProperties.isEnabled()) {
+            return;
+        }
         if (!properties.isEnabled()) {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI processing disabled", "AI_PROVIDER_DISABLED",
                     "AI processing is not enabled for this environment");
@@ -199,8 +206,10 @@ public class EntityRecognitionService {
     }
 
     private void validateOffsets(JsonNode entity, String sourceText, String entityText) {
-        JsonNode startNode = entity.get("startOffset");
-        JsonNode endNode = entity.get("endOffset");
+        JsonNode startNode = entity.has("globalStartUtf16")
+                ? entity.get("globalStartUtf16") : entity.get("startOffset");
+        JsonNode endNode = entity.has("globalEndUtf16")
+                ? entity.get("globalEndUtf16") : entity.get("endOffset");
         if (startNode == null && endNode == null) {
             return;
         }

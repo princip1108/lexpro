@@ -25,7 +25,7 @@ public class RetrievalConfig {
     }
 
     private void validate(RetrievalProperties properties) {
-        if (properties.getBaseUrl() == null
+        if (properties.getProvider() == null || properties.getBaseUrl() == null
                 || properties.getConnectTimeout() == null || properties.getConnectTimeout().isZero()
                 || properties.getConnectTimeout().isNegative()
                 || properties.getReadTimeout() == null || properties.getReadTimeout().isZero()

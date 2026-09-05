@@ -15,12 +15,12 @@ public class OpenAiCompatibleEntityRecognitionClient implements EntityRecognitio
     private static final Logger log = LoggerFactory.getLogger(OpenAiCompatibleEntityRecognitionClient.class);
     static final String PROMPT_VERSION = "entity-recognition-v3";
     static final String SCHEMA_VERSION = "entity-result-v1";
-    private static final Set<String> ENTITY_TYPES = Set.of("PERSON", "ORGANIZATION", "LOCATION", "DATE", "TIME",
-            "MONEY", "CASE_NUMBER", "LEGAL_REFERENCE", "OTHER");
+    private static final Set<String> ENTITY_TYPES = Set.of(
+            "SUSPECT", "LOCATION", "ORGANIZATION", "TIME", "CRIME", "DRUG");
     static final String SYSTEM_PROMPT = """
             Extract entities only from the supplied legal-document text. Never infer missing facts.
             Return one JSON object and no Markdown. The required format is:
-            {"entities":[{"type":"PERSON|ORGANIZATION|LOCATION|DATE|TIME|MONEY|CASE_NUMBER|LEGAL_REFERENCE|OTHER","text":"exact source text","normalizedValue":null,"confidence":0.0}]}
+            {"entities":[{"type":"SUSPECT|LOCATION|ORGANIZATION|TIME|CRIME|DRUG","text":"exact source text","normalizedText":null,"confidence":0.0}]}
             Do not return source offsets; the server calculates them after validating the exact source text.
             Confidence must be between 0 and 1.
             Every entity must occur in the source text. Do not add explanations or extra top-level fields.
@@ -42,7 +42,7 @@ public class OpenAiCompatibleEntityRecognitionClient implements EntityRecognitio
         if (generatedOffsets > 0) {
             log.info("Generated AI entity offsets requestId={} entityCount={}", requestId, generatedOffsets);
         }
-        return new EntityRecognitionOutput(entities, output.responseModel(), PROMPT_VERSION, SCHEMA_VERSION,
+        return new EntityRecognitionOutput(entities, output.responseModel(), output.responseModel(), PROMPT_VERSION, SCHEMA_VERSION,
                 SYSTEM_PROMPT, output.generationParameters(), output.tokenUsage());
     }
 

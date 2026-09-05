@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public record EntityRecognitionOutput(
         JsonNode entities,
+        String modelName,
         String responseModel,
         String promptVersion,
         String schemaVersion,
@@ -11,4 +12,10 @@ public record EntityRecognitionOutput(
         JsonNode generationParameters,
         JsonNode tokenUsage
 ) {
+    public EntityRecognitionOutput(JsonNode entities, String responseModel, String promptVersion,
+                                   String schemaVersion, String promptSnapshot,
+                                   JsonNode generationParameters, JsonNode tokenUsage) {
+        this(entities, responseModel, responseModel, promptVersion, schemaVersion, promptSnapshot,
+                generationParameters, tokenUsage);
+    }
 }

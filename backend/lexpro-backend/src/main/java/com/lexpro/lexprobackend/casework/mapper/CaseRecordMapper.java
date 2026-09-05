@@ -19,6 +19,11 @@ public interface CaseRecordMapper extends BaseMapper<CaseRecord> {
                 (c.deadline_at IS NOT NULL
                     AND c.deadline_at &lt; CURRENT_TIMESTAMP
                     AND c.case_status NOT IN ('CLOSED', 'ARCHIVED')) AS overdue,
+                (SELECT p.party_name FROM lexpro.case_party p
+                    WHERE p.case_id = c.case_id AND p.party_role = 'SUSPECT'
+                    ORDER BY p.party_id LIMIT 1) AS suspect_name,
+                (SELECT count(*) FROM lexpro.evidence_file f
+                    WHERE f.case_id = c.case_id AND f.file_status != 'DELETED') AS dossier_count,
                 (
                     SELECT u.real_name
                     FROM lexpro.case_assignment a

@@ -75,8 +75,11 @@ Errors use Spring `ProblemDetail` (`application/problem+json`) with stable exten
 
 ## Authentication
 
+The typical-case library accepts optional `judgmentDateFrom` and `judgmentDateTo` (ISO dates, inclusive). Either boundary may be omitted; reversed ranges return `400 INVALID_DATE_RANGE`. The existing exact `judgmentDate` filter remains supported.
+
 - Protected APIs use `Authorization: Bearer <access-token>`.
-- Public endpoints are limited to health checks, local API documentation and login.
+- Public endpoints are limited to health checks, local API documentation, login and login captcha.
+- `GET /api/v1/auth/captcha` returns `{captchaId, svg}` with `Cache-Control: no-store`. Login requires `captchaId` and `captcha` in addition to username/password. Four-character challenges expire in five minutes, are case-insensitive, and are consumed on every verification attempt; failures return `400 CAPTCHA_INVALID`. Challenges live in bounded single-process memory and expire on restart.
 - The backend is authoritative for permissions and case visibility.
 - Access tokens use HS256, expire after 30 minutes by default and are not refreshable.
 - `POST /api/v1/auth/logout` records the action; the client must discard the token. There is no server-side token blacklist.
@@ -153,7 +156,7 @@ Starting the same file while its current job is fresh returns `409 PARSE_IN_PROG
 | `GET` | `/api/v1/cases/{caseId}/documents/{docId}/entity-results/{entityResultId}` | `CASE_READ` plus case visibility | Original and confirmed entities plus model provenance |
 | `PUT` | `/api/v1/cases/{caseId}/documents/{docId}/entity-results/{entityResultId}/confirmation` | `AI_EXECUTE` plus case `EDIT` access | Store the first human-confirmed result without overwriting model output |
 
-Starting recognition requires a successful parse result with extracted text. The job is asynchronous and its `requestId` is a server-generated UUID. Confirmation accepts an object containing an `entities` array and is immutable after the first successful confirmation. AI provider errors use stable codes and never expose provider response bodies, credentials or prompts. External transfer remains blocked with `503 AI_DATA_EXPORT_DISABLED` until the environment explicitly allows it.
+Starting recognition requires a successful parse result with extracted text. The job is asynchronous and its `requestId` is a server-generated UUID. The internal LexPro_8B route accepts only `SUSPECT`, `LOCATION`, `ORGANIZATION`, `TIME`, `CRIME` and `DRUG`, and returns exact UTF-16 block/document offsets under `lexpro.entity.v2`. Confirmation accepts an object containing an `entities` array and is immutable after the first successful confirmation. AI errors use stable codes and never expose response bodies, credentials, prompts or source text. When the internal route is disabled, the legacy external route remains blocked with `503 AI_DATA_EXPORT_DISABLED` until external transfer is explicitly allowed.
 
 ### M5-S3 endpoints
 
@@ -217,16 +220,19 @@ A generating version does not replace the prior current report until it succeeds
 
 | Method | Path | Access | Result |
 |---|---|---|---|
-| `POST` | `/api/v1/typical-cases/imports` | `REPORT_MANAGE` + `AI_EXECUTE` | Normalize/embed and idempotently import up to 50 cases by `externalCaseId` |
-| `GET` | `/api/v1/typical-cases` | `RECOMMENDATION_USE` | Paged corpus query; supports keyword, case cause/type and favorites-only filters |
+| `POST` | `/api/v1/typical-cases/imports` | `REPORT_MANAGE` + `AI_EXECUTE` | Normalize/embed and idempotently import up to 50 cases by `externalCaseId`; V6 source metadata and structured case content are preserved |
+| `GET` | `/api/v1/typical-cases` | `RECOMMENDATION_USE` | Paged corpus query; supports keyword, case cause/type, court, region, document type, source, case level, one exact `judgmentDate` and favorites-only filters |
 | `GET` | `/api/v1/typical-cases/{typicalCaseId}` | `RECOMMENDATION_USE` | Typical-case metadata and content without its vector |
 | `PUT` | `/api/v1/typical-cases/{typicalCaseId}/favorite` | `RECOMMENDATION_USE` | `204 No Content`; idempotently add favorite |
 | `DELETE` | `/api/v1/typical-cases/{typicalCaseId}/favorite` | `RECOMMENDATION_USE` | `204 No Content`; idempotently remove favorite |
+| `POST` | `/api/v1/cases/{caseId}/recommendation-analyses` | `RECOMMENDATION_USE` + `CASE_READ` plus case visibility | `201 Created`; in `PARTNER` mode analyze exactly one `sourceSummaryId` or `factText` and return issues plus a short-lived signed `analysisToken` |
 | `POST` | `/api/v1/cases/{caseId}/recommendations` | `RECOMMENDATION_USE` + `CASE_READ` plus case visibility | `201 Created`; run retrieval and persist one recommendation batch |
 | `GET` | `/api/v1/cases/{caseId}/recommendations` | `RECOMMENDATION_USE` + `CASE_READ` plus case visibility | Recommendation history |
 | `GET` | `/api/v1/cases/{caseId}/recommendations/{recommendId}` | `RECOMMENDATION_USE` + `CASE_READ` plus case visibility | Query snapshot, retrieval metadata and ranked results |
 
 Recommendation input contains exactly one of `sourceSummaryId` or `factText`, optional `disputeFocus`, structured filters and a result limit from 1 to 50. Java authorizes the case before calling Python. A lexical-only degraded result is persisted with `degraded=true`; an unavailable Python/database service returns `503` and creates no recommendation batch.
+
+`LEXPRO_TYPICAL_CASE_PROVIDER` selects `LOCAL` (the existing BGE-M3 contract) or `PARTNER`; there is no implicit fallback. In `PARTNER` mode, recommendation creation repeats the same fact source and supplies the signed `analysisToken` plus optional `partnerFilters`. Java verifies the token's user, case, fact hash and expiry, explicitly sends the provider `analysis_id`, validates the complete search response, then atomically mirrors cases and creates recommendation history. Responses expose normalized camel-case fields including `caseNumber`, `region`, fact `score` and final `rankingScore`; provider task IDs, table names and vectors are not exposed. Partner connection/timeout/5xx failures return `503 TYPICAL_CASE_PROVIDER_UNAVAILABLE`, missing or expired analysis returns `409 TYPICAL_CASE_ANALYSIS_EXPIRED`, and invalid provider data returns `502 TYPICAL_CASE_PROVIDER_RESPONSE_INVALID`.
 
 ### M8 MCP endpoint
 
@@ -241,9 +247,9 @@ Recommendation input contains exactly one of `sourceSummaryId` or `factText`, op
 | `lexpro_recognize_legal_elements` | `AI_EXECUTE` | Validated legal elements with exact source evidence |
 | `lexpro_recognize_entities` | `AI_EXECUTE` | Validated document entities with source offsets where available |
 | `lexpro_summarize_case` | `AI_EXECUTE` | Bounded summary over explicitly supplied document text |
-| `lexpro_push_typical_cases` | Registered client | Reserved placeholder; always returns `TYPICAL_CASE_PUSH_NOT_IMPLEMENTED` |
+| `lexpro_push_typical_cases` | `AI_EXECUTE` | Read-only partner typical-case analysis and ranked recommendations over supplied facts |
 
-The catalog exposes no MCP resource, prompt, generic SQL, shell, filesystem or unrestricted HTTP capability. The first three tools use the approved DeepSeek-compatible clients and remain subject to the explicit external-case-data switch and input/output bounds.
+The catalog exposes no MCP resource, prompt, generic SQL, shell, filesystem or unrestricted HTTP capability. The first three tools use the approved DeepSeek-compatible clients and remain subject to the explicit external-case-data switch and input/output bounds. The typical-case tool is available only when retrieval is enabled, `PARTNER` is selected and partner case-data transfer is allowed. It returns bounded candidate metadata and excerpts without writing recommendation history or exposing provider task IDs, internal table names or full case content.
 
 ### M9 workspace endpoints
 
@@ -262,7 +268,13 @@ The catalog exposes no MCP resource, prompt, generic SQL, shell, filesystem or u
 
 A knowledge item requires text or object/array JSON. A work task requires exactly one of `caseId` and `contentId`. M9 does not expose knowledge or task status commands until the transition matrices and authorized roles are approved. Announcements, schedules and notifications are excluded.
 
-## Endpoint naming
+## Model API configuration (V7)
+
+`POST /api/v1/system/model-configurations`, `PUT /{id}`, `POST /{id}/activation`, and `DELETE /{id}` require `USER_MANAGE` in both controller and service. Paths after the first are relative to `/api/v1/system/model-configurations`. Responses never contain API keys. A blank key on edit preserves the encrypted value. `enableThinking` reaches the model request; disabling/deleting the active configuration selects the most recently updated enabled entry, or disables generation if none remain. This is configuration selection, not automatic retry/fallback after model failure. Allowed endpoint URLs and case-data export remain deployment-controlled.
+
+Legal-element schema `legal-elements-v3` adds an optional primitive `value` alongside the existing name/content/evidence. New generation uses Chinese named boolean, numeric and text elements. Historical analysis-only records remain readable and confirmable. Original JSON remains immutable; confirmation writes a separate draft. Quotes retain validated UTF-16 locations.
+
+## Endpoint naming conventions
 
 - Use plural nouns: `/cases`, `/users`, `/files`.
 - Use nested resources where the parent authorization boundary matters: `/cases/{caseId}/parties`.

@@ -1,0 +1,10 @@
+环境名称: LexPro
+操作系统: Ubuntu 22.04 LTS（推荐）
+服务器实测环境: 现有 MinerU Conda 环境（第三方统一创建为 LexPro）
+Python: 3.12.12
+PyTorch: 2.8.0（CUDA 12.8）
+MinerU: 2.7.1
+vLLM: 0.11.0
+GPU: NVIDIA L40 x 5，每张 46068 MiB；交付流程默认使用其中 2 张
+外部程序: NVIDIA Driver、CUDA、Conda、LibreOffice、curl
+说明: 当前服务器不新建环境；第三方创建的环境名称固定为 LexPro。

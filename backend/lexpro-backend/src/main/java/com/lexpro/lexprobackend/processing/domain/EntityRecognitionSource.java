@@ -5,6 +5,7 @@ public record EntityRecognitionSource(
         Long caseId,
         Long dossierId,
         String parseStatus,
-        String rawText
+        String rawText,
+        String parsedTextJson
 ) {
 }

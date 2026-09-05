@@ -59,7 +59,7 @@ class CaseControllerTests {
     void shouldListVisibleCasesWithCaseReadPermission() throws Exception {
         CaseSummaryResponse summary = new CaseSummaryResponse(
                 41L, "Test case", "LEX-2026-1", "CRIMINAL", null, null, null,
-                "PENDING", LocalDate.of(2026, 7, 29), null, false, "Reviewer Zhang",
+                "PENDING", LocalDate.of(2026, 7, 29), null, false, "Test suspect", 2, "Reviewer Zhang",
                 OffsetDateTime.parse("2026-07-29T10:00:00+08:00")
         );
         when(caseService.listCases(anyLong(), any())).thenReturn(new PageResponse<>(List.of(summary), 1, 20, 1, 1));
@@ -69,6 +69,8 @@ class CaseControllerTests {
                         .authorities(new SimpleGrantedAuthority("CASE_READ"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items[0].caseId").value(41))
+                .andExpect(jsonPath("$.items[0].suspectName").value("Test suspect"))
+                .andExpect(jsonPath("$.items[0].dossierCount").value(2))
                 .andExpect(jsonPath("$.items[0].handlerName").value("Reviewer Zhang"))
                 .andExpect(jsonPath("$.totalItems").value(1));
     }

@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.time.LocalDate;
 
 @Validated
 @RestController
@@ -56,10 +58,21 @@ public class TypicalCaseController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String caseCause,
             @RequestParam(required = false) String caseType,
+            @RequestParam(required = false) String court,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) String docType,
+            @RequestParam(required = false) String sourceName,
+            @RequestParam(required = false) String caseLevel,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate judgmentDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate judgmentDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate judgmentDateTo,
             @RequestParam(defaultValue = "false") boolean favoritesOnly,
             @RequestParam(defaultValue = "1") @Min(1) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        return service.typicalCases(userId(jwt), keyword, caseCause, caseType, favoritesOnly, page, size);
+        return service.typicalCases(userId(jwt), keyword, caseCause, caseType, court, region, docType,
+                sourceName, caseLevel, judgmentDate, judgmentDateFrom, judgmentDateTo,
+                favoritesOnly, page, size);
     }
 
     @GetMapping("/{typicalCaseId}")

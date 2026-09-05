@@ -12,11 +12,14 @@
 - Post-commit asynchronous scheduling through a bounded local executor.
 - Stable success/failure states, queue-rejection handling and retry recovery for stale interrupted jobs.
 - Parser interface plus a local UTF-8 `.txt` development parser.
+- Disabled-by-default internal adapter for PDF, DOCX and JPEG/PNG files, with an authenticated Java-to-Python boundary and validated versioned positioning contract. DOCX text/tables are extracted directly; embedded PNG/JPEG images use MinerU.
 - Case-level authorization and audit events correlated with the original request ID.
 
 ### M5-S2 entity recognition
 
-- OpenAI-compatible DeepSeek adapter using the configured base URL and model ID.
+- Preferred internal LexPro_8B adapter using the authenticated Python AI-service boundary; the prior OpenAI-compatible DeepSeek adapter remains a disabled-by-default fallback.
+- Exactly six accepted types: `SUSPECT`, `LOCATION`, `ORGANIZATION`, `TIME`, `CRIME` and `DRUG`. Any other model category invalidates the response.
+- Versioned `lexpro.entity.v2` output with source SHA-256, occurrence-preserving block/document UTF-16 offsets and aggregated display values.
 - Bounded post-commit asynchronous execution; the frontend receives `202 Accepted` and polls a persistent audit-derived job status.
 - Original model JSON and separate first-write human-confirmed JSON in the existing `entity_result` table.
 - Model, response model, prompt/schema versions, prompt snapshot, generation parameters, token usage, request ID and duration are preserved.
@@ -24,7 +27,7 @@
 - Stable provider/response/queue failure codes without credentials, provider bodies, prompts or source text in logs or error responses.
 - No migration: the reviewed V1/V2/V3 schema already contains every required field.
 
-The adapter is implemented, but no automated test or build sends data to DeepSeek. Real external transfer is independently disabled by default.
+Automated tests and builds send no data to either model server. The internal adapter is disabled by default; the legacy DeepSeek route additionally requires explicit external-transfer approval.
 
 ### M5-S3 legal elements
 
@@ -55,9 +58,9 @@ stale PROCESSING + POST again -> old FAILED, new PROCESSING version
 
 The current-result flag moves to the newly created version. Previous content and failure records remain immutable history. There is no unbounded automatic retry loop.
 
-## Local parser and configuration
+## Parser configuration
 
-The built-in parser reads only active UTF-8 text dossier files. PDF, Office and image files fail with `PARSER_UNAVAILABLE_FOR_FILE_TYPE` until an approved MinerU/document parser adapter is configured.
+The built-in parser reads active UTF-8 text dossier files. When the internal AI service is disabled, PDF, Word and image files fail with `PARSER_UNAVAILABLE_FOR_FILE_TYPE`. When enabled, the Spring adapter reads the private dossier object, enforces the configured size limit, and sends raw bytes to the internal Python service. The Python service calls MinerU and returns canonical text plus block/page/bounding-box provenance. Java validates the schema, SHA-256 digest, UTF-16 offsets, block ordering and exact block substrings before persistence.
 
 ```text
 LEXPRO_PROCESSING_CORE_THREADS=2
@@ -65,9 +68,19 @@ LEXPRO_PROCESSING_MAX_THREADS=4
 LEXPRO_PROCESSING_QUEUE_CAPACITY=50
 LEXPRO_PROCESSING_MAX_EXTRACTED_CHARS=2000000
 LEXPRO_PROCESSING_STALE_AFTER=PT30M
+LEXPRO_AI_SERVICE_ENABLED=false
+LEXPRO_AI_SERVICE_BASE_URL=http://127.0.0.1:8020
+LEXPRO_AI_SERVICE_INTERNAL_TOKEN=<shared internal secret, at least 32 characters>
+LEXPRO_AI_SERVICE_CONNECT_TIMEOUT=PT5S
+LEXPRO_AI_SERVICE_READ_TIMEOUT=PT15M
+LEXPRO_AI_SERVICE_MAX_FILE_SIZE=25MB
 ```
 
 The parser receives an internal object key through Java only. APIs return extracted content and provenance, never the object key or local path. Queue saturation produces `PROCESSING_QUEUE_FULL`; unexpected internal failures produce a stable `DOCUMENT_PROCESSING_FAILED` code while stack traces remain server-side.
+
+DOCX is not forwarded wholesale to MinerU. The adapter reads OOXML paragraph/table text in document order, OCRs embedded PNG/JPEG at their logical occurrence, and appends auxiliary header/footer/note text once. It returns `lexpro.parse.v2` with `parser=docx`, `parserVersion=docx-ooxml/2+<MinerU version>`, exact UTF-16 blocks and null page/bbox coordinates: this is logical text positioning, not Word layout reconstruction. Plain-text DOCX needs no model call. ZIP entry count/uncompressed size, XML size/DTD, text length and image count are bounded; external image URLs are never fetched. Corrupt/encrypted files, embedded objects and unsupported image formats produce safe `WORD_*` errors. Legacy `.doc` returns `LEGACY_WORD_CONVERSION_REQUIRED`: save as DOCX/PDF first. Upstream 5xx errors map to `MINERU_SERVICE_UNAVAILABLE`, not request rejection. No database migration or model-server modification is needed.
+
+A successful, structurally valid embedded-image OCR response with no text no longer invalidates the Word document. Existing text is retained and `parsedText.warnings` records `{code: "WORD_IMAGE_NO_TEXT", imageIndex: <one-based occurrence>}` without an internal image path; the frontend shows a completion notice. The original uploaded document still contains the image. Transport failures and malformed responses remain errors; a document with no text anywhere returns `WORD_DOCUMENT_EMPTY`. Standalone PDF/image empty-result behavior is unchanged.
 
 ## DeepSeek configuration and data boundary
 
@@ -85,7 +98,7 @@ LEXPRO_AI_MAX_INPUT_CHARS=60000
 LEXPRO_AI_MAX_OUTPUT_TOKENS=4096
 ```
 
-The entity schema is an object containing an `entities` array. Each entity requires `type` and exact source `text`; optional offsets are source locations and optional confidence is limited to `0..1`. Provider output is validated before persistence. Human confirmation writes `final_entities_json` once and never overwrites `entities_json`.
+The internal entity schema is `lexpro.entity.v2`. Each occurrence requires one of the six types, exact source text, a block ID, block-relative UTF-16 offsets and document-relative UTF-16 offsets. Java recalculates the block origin, rejects surrogate-pair splits and requires both slices to equal the entity text before persistence. Repeated occurrences remain separate; `documentEntities` is only the aggregated display view. Human confirmation writes `final_entities_json` once and never overwrites `entities_json`.
 
 Legal-element output is an object containing a non-empty `elements` array. Each element uses an allowlisted code and contains analysis plus at least one exact source quote. The provider must not calculate offsets; the v2 adapter locates each quote in the source (preserving repeated-quote order), writes Java UTF-16 `startOffset`/`endOffset`, and then validates them against the same source text. Summary generation accepts only an allowlisted type and explicitly selected, successful same-case parse results.
 
@@ -94,7 +107,7 @@ Legal-element output is an object containing a non-empty `elements` array. Each 
 Still pending outside the completed S1-S4 code scope:
 
 - Approve real-case-data transfer and production timeout/concurrency limits; current values are development defaults.
-- Add the approved PDF/Office parser, likely through the planned Python processing boundary.
+- Complete fictional-document acceptance against the real MinerU and LexPro model servers, then approve production limits and deployment settings.
 
 ## Manual acceptance
 
@@ -103,11 +116,12 @@ Still pending outside the completed S1-S4 code scope:
 3. Confirm the response is `202` with `PROCESSING`, then poll the returned `Location` until it is `SUCCESS`.
 4. Confirm `rawText`, `parserVersion=local-text/1`, version and request ID are present, while `fileUrl` and storage paths are absent.
 5. Start the same file again after completion and confirm a new version is created and history preserves the old result.
-6. Try a PDF before its adapter is configured and confirm the task becomes `FAILED` with `PARSER_UNAVAILABLE_FOR_FILE_TYPE`.
-7. With external data transfer still disabled, start entity recognition and confirm `503 AI_DATA_EXPORT_DISABLED` and no provider call.
-8. Only with approved fictional/masked test data, set `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA=true`, restart, start recognition, poll the returned job `Location`, and inspect the entity-result history.
-9. Confirm one result with an edited `finalEntities` object. Verify the original output remains unchanged and a second confirmation returns `409 ENTITY_RESULT_ALREADY_CONFIRMED`.
-10. Start a legal-element job for the same parsed document, poll its `Location`, and confirm every returned element has an exact source quote. Confirming edited elements with an invented quote or mismatched offsets must return `400 LEGAL_ELEMENT_RESULT_INVALID`.
-11. Confirm a valid legal-element result once. Verify the original model output remains unchanged and a second confirmation returns `409 LEGAL_ELEMENT_ALREADY_CONFIRMED`.
-12. Start a `FULL` summary using one or more successful `sourceDocIds`, poll its `Location`, and verify version `1` is current. Generate it again and verify version `2` becomes current while version `1` remains in history.
-13. Confirm one summary once and verify a second confirmation returns `409 CASE_SUMMARY_ALREADY_CONFIRMED`. Trigger a failed generation and verify the last successful summary remains current.
+6. With `LEXPRO_AI_SERVICE_ENABLED=false`, try a PDF and confirm the task becomes `FAILED` with `PARSER_UNAVAILABLE_FOR_FILE_TYPE`.
+7. After configuring the internal service with a fictional PDF, enable the switch and confirm the result reports `parserVersion`, preserves page/block provenance in `structuredData`, and contains no storage path. Confirm emoji and supplementary CJK characters remain exact when sliced by the returned UTF-16 offsets.
+8. With both adapters disabled, start entity recognition and confirm `503 AI_PROVIDER_DISABLED`. With only the legacy DeepSeek adapter enabled and external transfer disabled, confirm `503 AI_DATA_EXPORT_DISABLED` and no provider call.
+9. Only with approved fictional/masked test data, set `LEXPRO_AI_ALLOW_EXTERNAL_CASE_DATA=true`, restart, start recognition, poll the returned job `Location`, and inspect the entity-result history.
+10. Confirm one result with an edited `finalEntities` object. Verify the original output remains unchanged and a second confirmation returns `409 ENTITY_RESULT_ALREADY_CONFIRMED`.
+11. Start a legal-element job for the same parsed document, poll its `Location`, and confirm every returned element has an exact source quote. Confirming edited elements with an invented quote or mismatched offsets must return `400 LEGAL_ELEMENT_RESULT_INVALID`.
+12. Confirm a valid legal-element result once. Verify the original model output remains unchanged and a second confirmation returns `409 LEGAL_ELEMENT_ALREADY_CONFIRMED`.
+13. Start a `FULL` summary using one or more successful `sourceDocIds`, poll its `Location`, and verify version `1` is current. Generate it again and verify version `2` becomes current while version `1` remains in history.
+14. Confirm one summary once and verify a second confirmation returns `409 CASE_SUMMARY_ALREADY_CONFIRMED`. Trigger a failed generation and verify the last successful summary remains current.

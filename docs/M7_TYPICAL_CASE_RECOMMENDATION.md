@@ -77,3 +77,5 @@ Timeouts default to 3 seconds connect, 20 seconds read and one retry. Import req
 2. Import at least two typical cases through `/api/v1/typical-cases/imports`; importing the same `externalCaseId` again updates instead of duplicating it.
 3. Create a recommendation through `/api/v1/cases/{caseId}/recommendations`, then read its history/detail and favorite one result.
 4. Confirm `case_recommendation`, `case_recommendation_item`, `typical_case_favorite` and `operation_log` contain the expected traceability data and no response exposes embeddings or database credentials.
+
+The corpus query supports inclusive `judgmentDateFrom`/`judgmentDateTo` bounds (either may be omitted), alongside the legacy exact `judgmentDate`. Reversed bounds return 400. Keyword search covers title, case number, cause, source, keywords and stored content sections; paging and count use the same conditions. Frontend filter choices do not display per-category corpus counts.

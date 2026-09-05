@@ -2,6 +2,7 @@ package com.lexpro.lexprobackend.mcp.service;
 
 import com.lexpro.lexprobackend.mcp.config.McpProperties;
 import com.lexpro.lexprobackend.processing.config.AiProcessingProperties;
+import com.lexpro.lexprobackend.recommendation.config.PartnerTypicalCaseProperties;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.server.McpStatelessServerFeatures;
 import io.modelcontextprotocol.spec.McpSchema;
@@ -22,12 +23,15 @@ public class McpToolCatalog {
     private final McpToolService toolService;
     private final McpProperties mcpProperties;
     private final AiProcessingProperties aiProperties;
+    private final PartnerTypicalCaseProperties partnerProperties;
 
     public McpToolCatalog(McpToolService toolService, McpProperties mcpProperties,
-                          AiProcessingProperties aiProperties) {
+                          AiProcessingProperties aiProperties,
+                          PartnerTypicalCaseProperties partnerProperties) {
         this.toolService = toolService;
         this.mcpProperties = mcpProperties;
         this.aiProperties = aiProperties;
+        this.partnerProperties = partnerProperties;
     }
 
     public List<McpStatelessServerFeatures.SyncToolSpecification> tools() {
@@ -41,9 +45,9 @@ public class McpToolCatalog {
                 specification(tool("lexpro_summarize_case", "Summarize case documents",
                                 "Generate a structured case summary from one or more supplied documents.",
                                 summarySchema()), toolService::summarizeCase),
-                specification(tool("lexpro_push_typical_cases", "Push typical cases",
-                                "Reserved typical-case push capability. This tool is not implemented.",
-                                schema(Map.of(), List.of())), toolService::pushTypicalCases)
+                specification(tool("lexpro_push_typical_cases", "Recommend typical cases",
+                                "Analyze supplied case facts and return ranked typical-case recommendations.",
+                                typicalCaseSchema()), toolService::pushTypicalCases)
         );
     }
 
@@ -99,12 +103,46 @@ public class McpToolCatalog {
         return schema(fields, List.of("summaryType", "documents"));
     }
 
+    private McpSchema.JsonSchema typicalCaseSchema() {
+        Map<String, Object> filterFields = new LinkedHashMap<>();
+        filterFields.put("title", string(1, 255));
+        filterFields.put("caseCauses", stringArray(50, 255));
+        filterFields.put("applicableLaws", stringArray(100, 500));
+        filterFields.put("caseLevel", string(1, 50));
+        filterFields.put("courtLevel", string(1, 50));
+        filterFields.put("region", string(1, 100));
+        filterFields.put("judgmentDateThrough", Map.of("type", "string", "format", "date"));
+        filterFields.put("procedure", string(1, 100));
+        filterFields.put("docType", string(1, 50));
+        filterFields.put("court", string(1, 255));
+        filterFields.put("caseType", string(1, 50));
+
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("factText", string(1, 100_000));
+        fields.put("limit", Map.of(
+                "type", "integer",
+                "minimum", 1,
+                "maximum", Math.min(50, partnerProperties.getMaxResults())));
+        fields.put("filters", Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "properties", filterFields));
+        return schema(fields, List.of("factText"));
+    }
+
     private McpSchema.JsonSchema schema(Map<String, Object> fields, List<String> required) {
         return new McpSchema.JsonSchema("object", fields, required, false, null, null);
     }
 
     private Map<String, Object> string(int minimum, int maximum) {
         return Map.of("type", "string", "minLength", minimum, "maxLength", maximum);
+    }
+
+    private Map<String, Object> stringArray(int maximumItems, int maximumItemLength) {
+        return Map.of(
+                "type", "array",
+                "maxItems", maximumItems,
+                "items", string(1, maximumItemLength));
     }
 
     private int maxSummaryDocuments() {

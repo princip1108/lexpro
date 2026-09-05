@@ -18,6 +18,8 @@ public class AiProcessingConfig {
     RestClient aiRestClient(AiProcessingProperties properties) {
         validate(properties);
         HttpClient httpClient = HttpClient.newBuilder()
+                // The tunneled vLLM HTTP server rejects h2c upgrades with a missing-body error.
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(properties.getConnectTimeout())
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);

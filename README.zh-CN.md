@@ -1,5 +1,7 @@
 # LexPro
 
+> 全新机器建库、运行前后端、连接 LexPro/MinerU 服务器及交付验收，请直接阅读 [部署运行说明.md](部署运行说明.md)。
+
 [English](README.md)
 
 LexPro 是面向法律案件审查的应用。本仓库包含 Vue 前端、Spring Boot 后端、最终 PostgreSQL 数据库结构以及需求和设计源文件。

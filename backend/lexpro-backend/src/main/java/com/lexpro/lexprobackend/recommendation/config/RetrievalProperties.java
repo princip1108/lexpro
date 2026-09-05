@@ -9,6 +9,7 @@ import java.time.Duration;
 public class RetrievalProperties {
 
     private boolean enabled;
+    private TypicalCaseProvider provider = TypicalCaseProvider.LOCAL;
     private URI baseUrl = URI.create("http://127.0.0.1:8010");
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(20);
@@ -20,6 +21,8 @@ public class RetrievalProperties {
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public TypicalCaseProvider getProvider() { return provider; }
+    public void setProvider(TypicalCaseProvider provider) { this.provider = provider; }
     public URI getBaseUrl() { return baseUrl; }
     public void setBaseUrl(URI baseUrl) { this.baseUrl = baseUrl; }
     public Duration getConnectTimeout() { return connectTimeout; }

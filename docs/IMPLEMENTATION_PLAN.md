@@ -2,7 +2,7 @@
 
 [中文版](zh-CN/IMPLEMENTATION_PLAN.md)
 
-> Updated: 2026-08-07
+> Updated: 2026-09-03
 > Delivery method: small AI-assisted vertical slices, each independently tested and accepted.
 
 ## Current baseline
@@ -75,9 +75,9 @@
 ## M5 - Document and intelligent processing
 
 - [x] Parsing contract, async execution, retry and versioned parse results.
-  - Local development parsing currently supports UTF-8 text files; PDF/Office adapters remain provider-dependent.
+  - Local UTF-8 text parsing remains available. Real fictional-input acceptance passed for MinerU PDF parsing and image upload through Java to MinerU with persisted Chinese text. DOCX text/table extraction, embedded-image OCR through real MinerU, persistence and UTF-16 positioning passed real HTTP acceptance after tunnel restoration. Corrupt DOCX and legacy DOC return verified safe error codes; legacy DOC requires saving as DOCX/PDF. Broader corpus acceptance remains pending.
 - [x] Entity recognition with original/final results and confirmation.
-  - OpenAI-compatible DeepSeek calls are asynchronous, audited and blocked unless external data export is explicitly enabled.
+  - The internal LexPro_8B route now enforces the six approved entity classes and exact UTF-16 block/document locations. The legacy DeepSeek route remains separately gated by explicit external-data approval.
 - [x] Legal-element recognition with evidence traceability.
   - Model output and first-write human confirmation require exact source quotes; optional offsets are validated against the parsed text.
 - [x] Versioned case summaries and confirmation.
@@ -101,18 +101,31 @@
 - [x] Implement vector recall, RRF fusion, reranking and recommendation reasons in Python.
 - [x] Enforce case authorization in Java, invoke Python, and persist recommendation history/favorites and audit events in Java.
 - [x] Add configurable timeout, one bounded retry, lexical degradation, traceability and focused retrieval-quality tests.
+- [x] Add an opt-in partner-hosted provider with signed two-stage analysis, strict field mapping, transactional local mirroring and no automatic fallback from the local provider.
+- [x] Add and apply forward-only V6 metadata fields for the legal_llm corpus; expose the extended library filters without category counts.
+- [x] Prepare the legal_llm SQLite corpus and demo-case migration path through application APIs.
+  - Read-only preview accepts all 6,786 corpus rows with stable distinct IDs; five demo cases and four available dossier files were migrated locally.
+  - Full corpus embedding/import is intentionally deferred to server collaboration; the development machine does not need a complete local BGE-M3 deployment. One referenced demo PDF remains unavailable locally.
 
 ## M8 - MCP integration
 
 - [ ] Confirm the named MCP client(s) and complete real-client acceptance.
   - [x] Keep in-process Java, stateless Streamable HTTP at `/mcp` and Spring Boot as the trust boundary.
 - [x] Replace the current web-user JWT dependency with dedicated external MCP service-token authentication and per-client audit identity.
-- [x] Replace the legacy six-tool catalog with legal-element recognition, entity recognition, case summarization and a non-operational typical-case placeholder.
+- [x] Replace the legacy six-tool catalog with legal-element recognition, entity recognition, case summarization and read-only partner typical-case recommendation.
 - [x] Reuse the three validated DeepSeek-compatible clients with strict input/output schemas and no raw prompt/provider response exposure.
 - [x] Add bounded per-client concurrency/rate limits, token rotation/revocation, deployment-safe timeouts and focused security tests.
 - [ ] Deploy behind HTTPS and complete protocol, authorization, isolation and real-client acceptance from an external project.
 
 ## M9 - Workspace and delivery
+
+- [x] Local language-model routing unified on LexPro_8B with MinerU retained for parsing. Real fictional-input acceptance passed for entity recognition, legal elements, summaries, case cards and reports, including persistence. The Java generation transport uses HTTP/1.1 to avoid the vLLM h2c missing-body rejection; its focused local HTTP regression passed. Long-context and broader generation-quality acceptance remain pending.
+
+- [ ] Original legal_llm UI discrepancy acceptance: typed legal-element rows, recommendation columns, case-card confirmation and model configuration are implemented; browser/server acceptance remains pending.
+- [x] V7 model API configuration migration applied through Flyway after explicit approval and validated backup; 33 business tables, with V1-V6 unchanged.
+- [x] Real local HTTP acceptance passed for model configuration CRUD/activation and role boundaries; fictional-input entity recognition, legal elements, summaries, case cards and reports completed and persisted. UTF-16 locations matched seven entity spans and three evidence quotes, including supplementary Unicode characters.
+- [ ] Complete typical-case recommendation integration: the partner service on forwarded port 8000 remains unreachable; corpus browsing is verified separately. Original-UI visual acceptance remains pending.
+- [x] Local acceptance corpus: 100 SQLite metadata samples imported without embeddings; five demo cases assigned to administrator, prosecutor and reviewer accounts. Existing users/passwords preserved.
 
 - [x] Knowledge content and human work tasks.
   - Knowledge and task status-transition commands remain blocked until their transition matrices are approved.

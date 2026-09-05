@@ -210,7 +210,9 @@ public interface WorkspaceMapper {
                    count(*) FILTER (WHERE c.case_status NOT IN ('CLOSED', 'ARCHIVED')) AS active,
                    count(*) FILTER (WHERE c.case_status = 'PENDING') AS pending,
                    count(*) FILTER (WHERE c.deadline_at < CURRENT_TIMESTAMP
-                       AND c.case_status NOT IN ('CLOSED', 'ARCHIVED')) AS overdue
+                       AND c.case_status NOT IN ('CLOSED', 'ARCHIVED')) AS overdue,
+                   count(*) FILTER (WHERE c.case_status = 'PROCESSING') AS reviewing,
+                   count(*) FILTER (WHERE c.case_status IN ('CLOSED', 'ARCHIVED')) AS closed
             FROM lexpro.case_record c
             WHERE c.creator_id = #{userId} OR EXISTS (
                 SELECT 1 FROM lexpro.case_assignment ca
@@ -218,6 +220,25 @@ public interface WorkspaceMapper {
             )
             """)
     CaseMetricsRow selectCaseMetrics(@Param("userId") long userId);
+
+    @Select("""
+            WITH visible_cases AS (
+                SELECT c.case_id
+                FROM lexpro.case_record c
+                WHERE c.creator_id = #{userId} OR EXISTS (
+                    SELECT 1 FROM lexpro.case_assignment ca
+                    WHERE ca.case_id = c.case_id AND ca.user_id = #{userId} AND ca.ended_at IS NULL
+                )
+            )
+            SELECT
+                (SELECT count(*) FROM lexpro.evidence_file f JOIN visible_cases v ON v.case_id = f.case_id
+                    WHERE f.file_status != 'DELETED') AS dossier_total,
+                (SELECT count(*) FROM lexpro.entity_result r JOIN visible_cases v ON v.case_id = r.case_id) AS entity_results,
+                (SELECT count(*) FROM lexpro.legal_element_result r JOIN visible_cases v ON v.case_id = r.case_id) AS element_results,
+                (SELECT count(*) FROM lexpro.case_summary r JOIN visible_cases v ON v.case_id = r.case_id) AS summary_results,
+                (SELECT count(*) FROM lexpro.case_report r JOIN visible_cases v ON v.case_id = r.case_id) AS report_total
+            """)
+    ResultMetricsRow selectResultMetrics(@Param("userId") long userId);
 
     @Select("""
             SELECT c.case_type AS name, count(*) AS count
@@ -237,6 +258,11 @@ public interface WorkspaceMapper {
                 c.case_source, c.current_stage, c.case_status, c.accept_date, c.deadline_at,
                 (c.deadline_at IS NOT NULL AND c.deadline_at < CURRENT_TIMESTAMP
                     AND c.case_status NOT IN ('CLOSED', 'ARCHIVED')) AS overdue,
+                (SELECT p.party_name FROM lexpro.case_party p
+                    WHERE p.case_id = c.case_id AND p.party_role = 'SUSPECT'
+                    ORDER BY p.party_id LIMIT 1) AS suspect_name,
+                (SELECT count(*) FROM lexpro.evidence_file f
+                    WHERE f.case_id = c.case_id AND f.file_status != 'DELETED') AS dossier_count,
                 (
                     SELECT u.real_name
                     FROM lexpro.case_assignment a
@@ -281,6 +307,8 @@ public interface WorkspaceMapper {
                          OffsetDateTime createdAt, OffsetDateTime updatedAt) {}
 
     record TaskMetricsRow(long active, long dueToday, long overdue, long waitingConfirmation) {}
-    record CaseMetricsRow(long total, long active, long pending, long overdue) {}
+    record CaseMetricsRow(long total, long active, long pending, long overdue, long reviewing, long closed) {}
+    record ResultMetricsRow(long dossierTotal, long entityResults, long elementResults,
+                            long summaryResults, long reportTotal) {}
     record CategoryCountRow(String name, long count) {}
 }

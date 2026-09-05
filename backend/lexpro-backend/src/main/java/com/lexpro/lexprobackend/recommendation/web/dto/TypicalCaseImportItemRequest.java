@@ -22,8 +22,17 @@ public record TypicalCaseImportItemRequest(
         @Size(max = 100) String procedure,
         @Size(max = 100) List<@NotBlank @Size(max = 500) String> applicableLaws,
         @Size(max = 50) String caseLevel,
+        @Size(max = 255) String sourceName,
+        @Size(max = 255) String sourceFile,
+        @Size(max = 2048) String sourceUrl,
+        @Size(max = 100) List<@NotBlank @Size(max = 255) String> keywords,
         @Size(max = 500000) String content,
-        @Size(max = 200000) String fact
+        @Size(max = 200000) String fact,
+        @Size(max = 200000) String summary,
+        @Size(max = 200000) String prosecutorialProcess,
+        @Size(max = 200000) String adjudicationResult,
+        @Size(max = 200000) String reasoning,
+        @Size(max = 200000) String guidingSignificance
 ) {
     @AssertTrue(message = "content or fact is required")
     public boolean isContentPresent() {

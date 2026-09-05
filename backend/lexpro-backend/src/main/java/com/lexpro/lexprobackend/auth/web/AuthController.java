@@ -25,10 +25,18 @@ public class AuthController {
 
     private final AuthService authService;
     private final LoginRateLimiter loginRateLimiter;
+    private final com.lexpro.lexprobackend.auth.service.CaptchaService captchas;
 
-    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter) {
+    public AuthController(AuthService authService, LoginRateLimiter loginRateLimiter,
+                          com.lexpro.lexprobackend.auth.service.CaptchaService captchas) {
         this.authService = authService;
         this.loginRateLimiter = loginRateLimiter;
+        this.captchas = captchas;
+    }
+
+    @GetMapping("/captcha")
+    public ResponseEntity<com.lexpro.lexprobackend.auth.service.CaptchaService.Challenge> captcha() {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(captchas.create());
     }
 
     @PostMapping("/login")
@@ -38,6 +46,7 @@ public class AuthController {
             HttpServletRequest httpRequest
     ) {
         loginRateLimiter.acquire(request.username(), httpRequest.getRemoteAddr());
+        captchas.verify(request.captchaId(), request.captcha());
         LoginResponse response = authService.login(request);
         loginRateLimiter.recordSuccess(request.username());
         return ResponseEntity.ok()

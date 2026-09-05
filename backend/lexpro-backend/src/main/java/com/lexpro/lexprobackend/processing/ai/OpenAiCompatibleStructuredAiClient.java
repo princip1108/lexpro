@@ -35,7 +35,8 @@ public class OpenAiCompatibleStructuredAiClient implements StructuredAiClient {
 
     @Override
     public StructuredAiOutput generate(String systemPrompt, String userContent, String requestId) {
-        if (!properties.isEnabled()) {
+        var endpoint = properties.endpoint();
+        if (!endpoint.enabled()) {
             throw new AiClientException("AI_PROVIDER_DISABLED", "AI processing is disabled");
         }
         if (systemPrompt == null || systemPrompt.isBlank() || userContent == null || userContent.isBlank()) {
@@ -45,21 +46,22 @@ public class OpenAiCompatibleStructuredAiClient implements StructuredAiClient {
         parameters.put("temperature", 0);
         parameters.put("maxTokens", properties.getMaxOutputTokens());
         parameters.put("responseFormat", "json_object");
-        parameters.put("thinking", "disabled");
+        parameters.put("thinking", endpoint.enableThinking() ? "enabled" : "disabled");
         Map<String, Object> body = Map.of(
-                "model", properties.getModel(),
+                "model", endpoint.model(),
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", userContent)),
                 "temperature", 0,
                 "max_tokens", properties.getMaxOutputTokens(),
                 "response_format", Map.of("type", "json_object"),
-                "thinking", Map.of("type", "disabled")
+                "thinking", Map.of("type", endpoint.enableThinking() ? "enabled" : "disabled"),
+                "chat_template_kwargs", Map.of("enable_thinking", endpoint.enableThinking())
         );
         try {
             JsonNode response = restClient.post()
-                    .uri(completionEndpoint())
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getApiKey())
+                    .uri(endpoint.baseUrl().toString().replaceAll("/+$", "") + "/chat/completions")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + endpoint.apiKey())
                     .header("X-Request-Id", requestId)
                     .contentType(MediaType.APPLICATION_JSON)
                     .accept(MediaType.APPLICATION_JSON)

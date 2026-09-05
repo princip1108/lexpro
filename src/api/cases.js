@@ -30,3 +30,8 @@ export function listCaseParties(caseId) {
 export function listCaseAssignments(caseId) {
   return request(`/api/v1/cases/${caseId}/assignments`)
 }
+
+export function createCaseParty(caseId, payload) { return request(`/api/v1/cases/${caseId}/parties`, { method: 'POST', body: payload }) }
+export function updateCaseParty(caseId, partyId, payload) { return request(`/api/v1/cases/${caseId}/parties/${partyId}`, { method: 'PUT', body: payload }) }
+export function createCaseAssignment(caseId, payload) { return request(`/api/v1/cases/${caseId}/assignments`, { method: 'POST', body: payload }) }
+export function endCaseAssignment(caseId, assignmentId) { return request(`/api/v1/cases/${caseId}/assignments/${assignmentId}/end`, { method: 'POST' }) }

@@ -1,5 +1,7 @@
 # LexPro
 
+> For a complete fresh-machine setup, database initialization, model-server tunneling and acceptance checklist, see [部署运行说明.md](部署运行说明.md).
+
 [中文说明](README.zh-CN.md)
 
 LexPro is a legal case review application. The repository contains the Vue frontend, the Spring Boot backend, the final PostgreSQL schema, and the requirements/design source files.

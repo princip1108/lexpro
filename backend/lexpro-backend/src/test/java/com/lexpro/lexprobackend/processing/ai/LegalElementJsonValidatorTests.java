@@ -32,4 +32,15 @@ class LegalElementJsonValidatorTests {
 
         assertThrows(IllegalArgumentException.class, () -> validator.validate(value, "source text"));
     }
+
+    @Test
+    void shouldPreserveTypedAmountsAndRejectBooleanCoercion() throws Exception {
+        var value = objectMapper.readTree("""
+                {"elements":[{"code":"FACT","name":"涉案金额","value":12345.67,"content":"涉案金额12345.67元",
+                "evidence":[{"quote":"12345.67元","startOffset":4,"endOffset":13}]}]}
+                """);
+        assertDoesNotThrow(() -> validator.validate(value, "😀𠮷12345.67元"));
+        ((com.fasterxml.jackson.databind.node.ObjectNode)value.path("elements").get(0)).put("value", true);
+        assertThrows(IllegalArgumentException.class, () -> validator.validate(value, "😀𠮷12345.67元"));
+    }
 }

@@ -14,13 +14,24 @@ import java.util.Map;
 public class OpenAiCompatibleLegalElementRecognitionClient implements LegalElementRecognitionClient {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAiCompatibleLegalElementRecognitionClient.class);
-    static final String PROMPT_VERSION = "legal-elements-v3";
-    static final String SCHEMA_VERSION = "legal-elements-v2";
+    static final String PROMPT_VERSION = "legal-elements-v4";
+    static final String SCHEMA_VERSION = "legal-elements-v3";
     static final String SYSTEM_PROMPT = """
             Analyze legal elements only from the supplied document. Do not infer unsupported facts.
             Return one JSON object and no Markdown with this shape:
-            {"caseCause":null,"elements":[{"code":"SUBJECT|SUBJECTIVE|OBJECT|OBJECTIVE|FACT|EVIDENCE|LEGAL_BASIS|DISPUTE_FOCUS|OTHER","name":"short label","content":"brief analysis","satisfied":true,"confidence":0.0,"evidence":[{"quote":"exact source text"}]}],"validation":{"warnings":[],"unsupportedClaims":[]}}
-            Every element must cite at least one exact quote from the source. Do not return startOffset or endOffset;
+            {"caseCause":null,"courtName":null,"elements":[{"code":"FACT","name":"自首","value":true,"content":"brief analysis in Chinese","satisfied":true,"confidence":0.0,"evidence":[{"quote":"exact source text"}]}],"validation":{"warnings":[],"unsupportedClaims":[]}}
+            Use specific Chinese legal-element names, not generic subject/object headings.
+            Boolean value names include 自首、坦白、累犯、立功、认罪认罚、主犯、从犯、犯罪既遂、犯罪未遂、犯罪中止、缓刑、谅解、悔罪、前科劣迹、初犯偶犯、未成年、多次盗窃、入室盗窃、扒窃、电信网络诈骗、合同诈骗、持械抢劫、入户抢劫、致人重伤、致人死亡、防卫过当.
+            Numeric value names include 涉案金额、盗窃数额、诈骗数额、抢劫数额、罚金、退赔金额、赔偿金额、毒品数量、刑期月数.
+            Every element must include value: a JSON boolean, number, string or null. Never convert an amount to a boolean.
+            Monetary values are in yuan, sentence duration in months; specify the unit in content for other quantities.
+            Return only elements supported by the document. Absence of mention is NOT false; omit unsupported elements.
+            Unknown values are null. Other case-specific element names may use concise string values.
+            code must be SUBJECT, SUBJECTIVE, OBJECT, OBJECTIVE, FACT, EVIDENCE, LEGAL_BASIS, DISPUTE_FOCUS or OTHER.
+            Every element must cite at least one exact quote from the source. IMPORTANT: copy each quote character-for-character
+            from the supplied document, including exact Chinese wording and punctuation. Never paraphrase, normalize, combine,
+            or invent a quote. Before returning JSON, verify that the source text contains each quote as one contiguous substring;
+            if uncertain, use a shorter exact substring from the source. Do not return startOffset or endOffset;
             the server calculates UTF-16 offsets from each quote. Keep content and validation arrays concise.
             Confidence must be between 0 and 1. Use null for unknown satisfied state. Never invent legal citations.
             Do not include reasoning, explanations, Markdown, or fields outside this JSON object.

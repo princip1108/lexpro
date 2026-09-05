@@ -77,3 +77,5 @@ LEXPRO_RETRIEVAL_MODEL_VERSION=main
 2. 通过 `/api/v1/typical-cases/imports` 导入至少两条典型案例；再次导入相同 `externalCaseId` 时应更新而不是新增重复记录。
 3. 通过 `/api/v1/cases/{caseId}/recommendations` 创建推荐，再读取历史/详情并收藏一个结果。
 4. 检查 `case_recommendation`、`case_recommendation_item`、`typical_case_favorite` 和 `operation_log` 已保存追溯信息，且 API 不返回向量或数据库凭据。
+
+案例库查询支持包含边界的 `judgmentDateFrom`／`judgmentDateTo` 区间，允许只填一端，同时保留旧的精确 `judgmentDate`。起始晚于结束返回 400。关键词覆盖标题、案号、案由、来源、关键词及已存储正文各部分，分页和计数使用相同条件；前端筛选选项不显示各类别语料数量。

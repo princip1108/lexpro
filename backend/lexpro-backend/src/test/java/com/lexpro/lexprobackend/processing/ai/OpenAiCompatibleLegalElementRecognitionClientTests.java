@@ -34,7 +34,7 @@ class OpenAiCompatibleLegalElementRecognitionClientTests {
         assertEquals("FACT", output.rawElements().at("/elements/0/code").textValue());
         assertEquals("张三", output.rawElements().at("/elements/0/evidence/0/quote").textValue());
         assertEquals(0.95, output.rawElements().at("/elements/0/confidence").doubleValue());
-        assertEquals("legal-elements-v2", output.schemaVersion());
+        assertEquals("legal-elements-v3", output.schemaVersion());
     }
 
     @Test

@@ -39,6 +39,21 @@ class AuthControllerTests {
     @MockitoBean
     private LoginRateLimiter loginRateLimiter;
 
+    @MockitoBean
+    private com.lexpro.lexprobackend.auth.service.CaptchaService captchas;
+
+    @Test
+    void shouldRejectMissingCaptchaBeforePasswordAuthentication() throws Exception {
+        doThrow(new com.lexpro.lexprobackend.common.error.ApiException(
+                org.springframework.http.HttpStatus.BAD_REQUEST, "Invalid captcha", "CAPTCHA_INVALID", "验证码错误或已过期"))
+                .when(captchas).verify(null, null);
+        mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"admin\",\"password\":\"StrongPass1!\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("CAPTCHA_INVALID"));
+        org.mockito.Mockito.verifyNoInteractions(authService);
+    }
+
     @Test
     void shouldReturnNoStoreLoginResponseWithoutPassword() throws Exception {
         CurrentUserResponse user = new CurrentUserResponse(

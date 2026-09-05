@@ -165,11 +165,15 @@ public class WorkspaceService {
     public WorkspaceDtos.DashboardResponse getDashboard(long userId) {
         WorkspaceMapper.CaseMetricsRow cases = workspaceMapper.selectCaseMetrics(userId);
         WorkspaceMapper.TaskMetricsRow tasks = workspaceMapper.selectTaskMetrics(userId);
+        WorkspaceMapper.ResultMetricsRow results = workspaceMapper.selectResultMetrics(userId);
         Page<WorkspaceMapper.TaskRow> urgentPage = workspaceMapper.selectTaskPage(
                 new Page<>(1, 5, false), userId, true, null, null, "URGENT", null);
         return new WorkspaceDtos.DashboardResponse(
-                new WorkspaceDtos.CaseMetrics(cases.total(), cases.active(), cases.pending(), cases.overdue()),
+                new WorkspaceDtos.CaseMetrics(cases.total(), cases.active(), cases.pending(), cases.overdue(),
+                        cases.reviewing(), cases.closed()),
                 new WorkspaceDtos.TaskMetrics(tasks.active(), tasks.dueToday(), tasks.overdue(), tasks.waitingConfirmation()),
+                new WorkspaceDtos.ResultMetrics(results.dossierTotal(), results.entityResults(),
+                        results.elementResults(), results.summaryResults(), results.reportTotal()),
                 workspaceMapper.selectCaseCategories(userId).stream()
                         .map(row -> new WorkspaceDtos.CategoryCount(row.name(), row.count())).toList(),
                 workspaceMapper.selectRecentCases(userId, 5).stream().map(row -> row.toResponse()).toList(),

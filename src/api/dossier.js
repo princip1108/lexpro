@@ -27,3 +27,11 @@ export function listParseResults(caseId, dossierId) {
 export function getParsedDocument(caseId, docId) {
   return request(`/api/v1/cases/${caseId}/documents/${docId}`)
 }
+
+export const listDossierFolders = (caseId) => request(`/api/v1/cases/${caseId}/dossier/folders`)
+export const createDossierFolder = (caseId, payload) => request(`/api/v1/cases/${caseId}/dossier/folders`, { method: 'POST', body: payload })
+export const listDossierTags = (caseId) => request(`/api/v1/cases/${caseId}/dossier/tags`)
+export const createDossierTag = (caseId, payload) => request(`/api/v1/cases/${caseId}/dossier/tags`, { method: 'POST', body: payload })
+export const updateDossierFile = (caseId, dossierId, payload) => request(`/api/v1/cases/${caseId}/dossier/files/${dossierId}`, { method: 'PUT', body: payload })
+export const deleteDossierFile = (caseId, dossierId) => request(`/api/v1/cases/${caseId}/dossier/files/${dossierId}`, { method: 'DELETE' })
+export const restoreDossierFile = (caseId, dossierId) => request(`/api/v1/cases/${caseId}/dossier/files/${dossierId}/restore`, { method: 'POST' })

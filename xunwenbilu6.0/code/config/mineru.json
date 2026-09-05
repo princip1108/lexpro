@@ -1,0 +1,10 @@
+{
+  "models-dir": {
+    "vlm": "../../model/MinerU2.5-2509-1.2B"
+  },
+  "latex-delimiter-config": {
+    "display": {"left": "$$", "right": "$$"},
+    "inline": {"left": "$", "right": "$"}
+  }
+}
+

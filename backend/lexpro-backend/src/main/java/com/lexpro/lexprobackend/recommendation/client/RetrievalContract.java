@@ -17,7 +17,9 @@ public final class RetrievalContract {
             List<String> caseCauses, String caseType, String country, String court,
             String courtLevel, String docType, List<String> disputeFocus, LocalDate judgmentDate,
             String procedure, List<String> applicableLaws, String caseLevel,
-            String content, String fact
+            String sourceName, String sourceFile, String sourceUrl, List<String> keywords,
+            String content, String fact, String summary, String prosecutorialProcess,
+            String adjudicationResult, String reasoning, String guidingSignificance
     ) {}
 
     public record NormalizeRequest(String schemaVersion, String requestId, List<TypicalCaseInput> cases) {}
@@ -27,7 +29,10 @@ public final class RetrievalContract {
             List<String> caseCauses, String caseType, String country, String court,
             String courtLevel, String docType, List<String> disputeFocus, LocalDate judgmentDate,
             String procedure, List<String> applicableLaws, String caseLevel,
-            String content, String fact, List<Double> embedding
+            String sourceName, String sourceFile, String sourceUrl, List<String> keywords,
+            String content, String fact, String summary, String prosecutorialProcess,
+            String adjudicationResult, String reasoning, String guidingSignificance,
+            List<Double> embedding
     ) {}
 
     public record NormalizeResponse(

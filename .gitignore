@@ -8,6 +8,7 @@ dist/
 **/__pycache__/
 **/.pytest_cache/
 **/.venv/
+**/unsloth_compiled_cache/
 
 # IDE metadata
 .idea/
@@ -38,10 +39,31 @@ deployment/mcp-clients/
 # Runtime files
 *.log
 logs/
+.runtime/
 uploads/
 /storage/
 /backend/lexpro-backend/storage/
 backups/
+
+# Local databases, archives and model/runtime payloads are not source code
+*.db
+*.sqlite
+*.dump
+/legal_llm.zip
+/legal_llm/
+/typical_case_service/models/
+/typical_case_service/unsloth_compiled_cache/
+/xunwenbilu6.0/data/
+/xunwenbilu6.0/output/
+/xunwenbilu6.0/model/*
+!/xunwenbilu6.0/model/README.md
+!/xunwenbilu6.0/model/checksums.sha256
+/xunwenbilu6.0/code/config/deploy.env
+
+# Local QA renders and temporary delivery worktrees
+/qa_*/
+/.codex-doc-review/
+/.codex-tmp/
 
 # OS and temporary files
 .DS_Store

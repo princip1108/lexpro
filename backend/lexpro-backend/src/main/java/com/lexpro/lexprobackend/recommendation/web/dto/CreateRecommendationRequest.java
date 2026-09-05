@@ -14,7 +14,9 @@ public record CreateRecommendationRequest(
         @Size(max = 100000) String factText,
         @Size(max = 100) List<@Size(max = 500) String> disputeFocus,
         @Valid RetrievalFiltersRequest filters,
-        @Min(1) @Max(50) Integer limit
+        @Min(1) @Max(50) Integer limit,
+        @Size(max = 8192) String analysisToken,
+        @Valid PartnerRecommendationFiltersRequest partnerFilters
 ) {
     @AssertTrue(message = "exactly one of sourceSummaryId or factText is required")
     public boolean isQueryPresent() {

@@ -40,6 +40,16 @@ class FlywayMigrationResourcesTests {
                     "db/migration/V4__configure_typical_case_vectors.sql",
                     "5EF3BE0307A89F4093361C32EC0432520C7E3EB2985943347BAA79F91A61CD15",
                     0
+            ),
+            new ExpectedMigration(
+                    "db/migration/V5__add_partner_typical_case_fields.sql",
+                    "4519A014401E87A7D53038B200D4D44B80ACECBC26CD634D2816B38A4E680C1D",
+                    0
+            ),
+            new ExpectedMigration(
+                    "db/migration/V6__add_legal_llm_typical_case_metadata.sql",
+                    "6B8AA679765B60C77BA18A220FD84D60AF6F47C0BBD400CB2029AD918B59AEE0",
+                    0
             )
     );
 

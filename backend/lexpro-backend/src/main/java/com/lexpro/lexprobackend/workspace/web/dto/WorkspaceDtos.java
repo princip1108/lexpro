@@ -138,14 +138,18 @@ public final class WorkspaceDtos {
     public record DashboardResponse(
             CaseMetrics cases,
             TaskMetrics tasks,
+            ResultMetrics results,
             List<CategoryCount> caseCategories,
             List<CaseSummaryResponse> recentCases,
             List<TaskSummaryResponse> urgentTasks
     ) {}
 
-    public record CaseMetrics(long total, long active, long pending, long overdue) {}
+    public record CaseMetrics(long total, long active, long pending, long overdue, long reviewing, long closed) {}
 
     public record TaskMetrics(long active, long dueToday, long overdue, long waitingConfirmation) {}
+
+    public record ResultMetrics(long dossierTotal, long entityResults, long elementResults,
+                                long summaryResults, long reportTotal) {}
 
     public record CategoryCount(String name, long count) {}
 }

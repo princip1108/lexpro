@@ -1,13 +1,13 @@
 <template>
-  <el-container class="app-shell">
+  <div class="shell">
     <Sidebar />
-    <el-container class="main-shell">
+    <main class="main">
       <Topbar />
-      <el-main class="app-main">
+      <div class="content">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </div>
+    </main>
+  </div>
 </template>
 
 <script setup>
@@ -16,20 +16,22 @@ import Topbar from './Topbar.vue'
 </script>
 
 <style scoped>
-.app-shell {
+.shell {
+  display: flex;
   min-height: 100vh;
-  background: var(--page-bg);
+  background: var(--bg);
 }
 
-.main-shell {
+.main {
+  display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
 }
 
-.app-main {
+.content {
   flex: 1;
-  padding: 18px 20px 22px;
+  padding: 22px 24px 40px;
   overflow-x: hidden;
 }
 </style>

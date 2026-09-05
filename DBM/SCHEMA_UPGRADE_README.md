@@ -44,6 +44,13 @@ psql -v ON_ERROR_STOP=1 -d lexpro -f DBM/lexpro_schema_upgrade_v3_workspace.sql
 
 数据库已经执行 V1 时，只执行 V2、V3。三个文件都是一次性脚本，不可重复执行；脚本均使用事务，失败不会提交部分结构。
 
+现有开发库在 V3 基线后使用只向前迁移：V4 固定本地 BGE-M3 向量规格，V5 增加合作方案例编号、地区和最终排序分字段，V6 保存 `legal_llm` 来源元数据与结构化裁判内容。V4–V6 均不新增业务表，业务表总数仍为 32。以下命令只说明顺序；执行前必须备份、验证并取得明确批准：
+
+```bash
+psql -v ON_ERROR_STOP=1 -d lexpro -f DBM/lexpro_schema_upgrade_v4_retrieval.sql
+psql -v ON_ERROR_STOP=1 -d lexpro -f DBM/lexpro_schema_upgrade_v5_partner_typical_cases.sql
+```
+
 ## 执行前检查
 
 1. 先备份目标数据库，并在测试库执行。

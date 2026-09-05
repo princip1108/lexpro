@@ -7,7 +7,6 @@ import com.lexpro.lexprobackend.common.audit.AuditEvent;
 import com.lexpro.lexprobackend.common.audit.AuditResult;
 import com.lexpro.lexprobackend.common.audit.AuditService;
 import com.lexpro.lexprobackend.processing.ai.EntityRecognitionOutput;
-import com.lexpro.lexprobackend.processing.config.AiProcessingProperties;
 import com.lexpro.lexprobackend.processing.domain.EntityRecognitionResult;
 import com.lexpro.lexprobackend.processing.mapper.EntityRecognitionMapper;
 import org.springframework.stereotype.Service;
@@ -19,14 +18,12 @@ import java.util.Map;
 public class EntityRecognitionCompletionService {
 
     private final EntityRecognitionMapper mapper;
-    private final AiProcessingProperties properties;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
 
-    public EntityRecognitionCompletionService(EntityRecognitionMapper mapper, AiProcessingProperties properties,
+    public EntityRecognitionCompletionService(EntityRecognitionMapper mapper,
                                               AuditService auditService, ObjectMapper objectMapper) {
         this.mapper = mapper;
-        this.properties = properties;
         this.auditService = auditService;
         this.objectMapper = objectMapper;
     }
@@ -37,7 +34,7 @@ public class EntityRecognitionCompletionService {
         result.setDocId(event.docId());
         result.setCaseId(event.caseId());
         result.setEntitiesJson(writeJson(output.entities()));
-        result.setModelName(properties.getModel());
+        result.setModelName(output.modelName());
         result.setModelVersion(output.responseModel());
         result.setPromptVersion(output.promptVersion());
         result.setSchemaVersion(output.schemaVersion());
@@ -51,7 +48,7 @@ public class EntityRecognitionCompletionService {
         auditService.record(new AuditEvent(event.userId(), event.caseId(), "ENTITY_RECOGNITION_SUCCEEDED",
                 "ENTITY_RESULT", String.valueOf(result.getEntityResultId()), AuditResult.SUCCESS,
                 Map.of("docId", event.docId(), "durationMs", durationMs,
-                        "entityResultId", result.getEntityResultId(), "model", properties.getModel())),
+                        "entityResultId", result.getEntityResultId(), "model", output.modelName())),
                 event.requestId());
     }
 

@@ -9,11 +9,15 @@ import com.lexpro.lexprobackend.mcp.service.McpToolCatalog;
 import com.lexpro.lexprobackend.mcp.service.McpToolService;
 import com.lexpro.lexprobackend.processing.ai.CaseSummaryClient;
 import com.lexpro.lexprobackend.processing.ai.CaseSummaryOutput;
+import com.lexpro.lexprobackend.processing.ai.AiClientException;
 import com.lexpro.lexprobackend.processing.ai.EntityRecognitionClient;
 import com.lexpro.lexprobackend.processing.ai.EntityRecognitionOutput;
 import com.lexpro.lexprobackend.processing.ai.LegalElementRecognitionClient;
 import com.lexpro.lexprobackend.processing.ai.LegalElementRecognitionOutput;
 import com.lexpro.lexprobackend.processing.config.AiProcessingProperties;
+import com.lexpro.lexprobackend.recommendation.config.PartnerTypicalCaseProperties;
+import com.lexpro.lexprobackend.recommendation.partner.PartnerTypicalCaseContract;
+import com.lexpro.lexprobackend.recommendation.service.RecommendationService;
 import io.modelcontextprotocol.common.McpTransportContext;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +37,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class McpToolServiceTests {
@@ -42,9 +45,11 @@ class McpToolServiceTests {
     private LegalElementRecognitionClient legalElementClient;
     private EntityRecognitionClient entityClient;
     private CaseSummaryClient summaryClient;
+    private RecommendationService recommendationService;
     private AuditService auditService;
     private McpProperties mcpProperties;
     private AiProcessingProperties aiProperties;
+    private PartnerTypicalCaseProperties partnerProperties;
     private McpToolService service;
 
     @BeforeEach
@@ -52,18 +57,22 @@ class McpToolServiceTests {
         legalElementClient = mock(LegalElementRecognitionClient.class);
         entityClient = mock(EntityRecognitionClient.class);
         summaryClient = mock(CaseSummaryClient.class);
+        recommendationService = mock(RecommendationService.class);
         auditService = mock(AuditService.class);
         mcpProperties = new McpProperties();
         aiProperties = new AiProcessingProperties();
         aiProperties.setEnabled(true);
         aiProperties.setAllowExternalCaseData(true);
-        service = new McpToolService(legalElementClient, entityClient, summaryClient, aiProperties,
+        partnerProperties = new PartnerTypicalCaseProperties();
+        partnerProperties.setMaxResults(20);
+        service = new McpToolService(legalElementClient, entityClient, summaryClient, recommendationService,
+                aiProperties,
                 new McpInvocationLimiter(mcpProperties), auditService, objectMapper, mcpProperties);
     }
 
     @Test
     void shouldExposeOnlyTheFourLegalAiTools() {
-        McpToolCatalog catalog = new McpToolCatalog(service, mcpProperties, aiProperties);
+        McpToolCatalog catalog = new McpToolCatalog(service, mcpProperties, aiProperties, partnerProperties);
 
         var tools = catalog.tools().stream().map(specification -> specification.tool()).toList();
 
@@ -76,6 +85,7 @@ class McpToolServiceTests {
         assertTrue(tools.stream().allMatch(tool -> Boolean.TRUE.equals(tool.annotations().readOnlyHint())));
         assertTrue(tools.stream().allMatch(tool -> Boolean.FALSE.equals(tool.annotations().destructiveHint())));
         assertTrue(tools.stream().allMatch(tool -> Boolean.FALSE.equals(tool.inputSchema().additionalProperties())));
+        assertEquals(List.of("factText"), tools.getLast().inputSchema().required());
     }
 
     @Test
@@ -98,6 +108,22 @@ class McpToolServiceTests {
         assertFalse(text(result).contains("private prompt"));
         assertFalse(text(result).contains("promptVersion"));
         verify(auditService).recordIndependent(any(), eq("mcp-test-request"));
+    }
+
+    @Test
+    void shouldExposeSafeAiDiagnosticForInvalidLegalElementResponse() {
+        when(legalElementClient.recognize("已付款五万元", null, "mcp-test-request"))
+                .thenThrow(new AiClientException("AI_RESPONSE_INVALID",
+                        "EVIDENCE_NOT_IN_SOURCE:index=0:0",
+                        "AI legal-element response failed validation"));
+
+        McpSchema.CallToolResult result = service.recognizeLegalElements(context(Set.of("AI_EXECUTE")),
+                new McpSchema.CallToolRequest("lexpro_recognize_legal_elements", Map.of("text", "已付款五万元")));
+
+        assertTrue(result.isError());
+        assertEquals("AI_RESPONSE_INVALID", ((Map<?, ?>) result.structuredContent()).get("errorCode"));
+        assertEquals("EVIDENCE_NOT_IN_SOURCE", ((Map<?, ?>) result.structuredContent()).get("diagnosticCode"));
+        assertFalse(text(result).contains("index=0"));
     }
 
     @Test
@@ -143,13 +169,29 @@ class McpToolServiceTests {
     }
 
     @Test
-    void shouldKeepTypicalCaseToolAsANetworkFreePlaceholder() {
-        McpSchema.CallToolResult result = service.pushTypicalCases(context(Set.of()),
-                new McpSchema.CallToolRequest("lexpro_push_typical_cases", Map.of()));
+    void shouldReturnAllowlistedTypicalCaseRecommendations() {
+        PartnerTypicalCaseContract.AnalyzeData analysis = new PartnerTypicalCaseContract.AnalyzeData(
+                "private-analysis-id", 2, 1, 10.0, 2.0, 12.0,
+                List.of(new PartnerTypicalCaseContract.AnalyzeIssue(
+                        0, "contract validity", 0.9, 0.8, 0, "The parties signed a contract")));
+        PartnerTypicalCaseContract.SearchData search = new PartnerTypicalCaseContract.SearchData(
+                "private-retrieval-id", "private-analysis-id", 0, "weighted rank",
+                objectMapper.createObjectNode(), List.of(), objectMapper.createObjectNode(),
+                objectMapper.createObjectNode());
+        when(recommendationService.recommendForMcp("The parties signed a contract", null, 5))
+                .thenReturn(new RecommendationService.McpRecommendationResult(analysis, search));
 
-        assertTrue(result.isError());
-        assertTrue(text(result).contains("TYPICAL_CASE_PUSH_NOT_IMPLEMENTED"));
-        verifyNoInteractions(legalElementClient, entityClient, summaryClient, auditService);
+        McpSchema.CallToolResult result = service.pushTypicalCases(context(Set.of("AI_EXECUTE")),
+                new McpSchema.CallToolRequest("lexpro_push_typical_cases", Map.of(
+                        "factText", "The parties signed a contract", "limit", 5)));
+
+        assertFalse(result.isError());
+        assertTrue(text(result).contains("partner-typical-case-service"));
+        assertTrue(text(result).contains("contract validity"));
+        assertFalse(text(result).contains("private-analysis-id"));
+        assertFalse(text(result).contains("private-retrieval-id"));
+        verify(recommendationService).recommendForMcp("The parties signed a contract", null, 5);
+        verify(auditService).recordIndependent(any(), eq("mcp-test-request"));
     }
 
     @Test
